@@ -1,0 +1,42 @@
+{
+	"version": 4,
+	"configurations": [
+		{
+			"name": "Arduino-ESP32",
+			"compilerPath": "",
+			"compilerArgs": [],
+			"intelliSenseMode": "msvc-x64",
+			"includePath": [
+				"${default}",
+				"${workspaceRoot}/**",
+				"C:/Code/Arduino/libraries/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/cores/esp32/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32/qspi_qspi/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32/include/esp_common/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32/include/esp32-camera/driver/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32s2/include/esp32-camera/driver/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32s3/include/esp32-camera/driver/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/WiFi/src/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/gcc8_4_0-esp-2021r2-patch3/xtensa-esp32-elf/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/tools/riscv32-esp-elf-gcc/gcc8_4_0-esp-2021r2-patch3/riscv32-esp-elf/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/gcc8_4_0-esp-2021r2-patch3/xtensa-esp32-elf/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools/sdk/esp32/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include/**",
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.4/variants/esp32/**",
+				"C:/Program Files (x86)/Arduino/hardware/tools/avr/lib/gcc/avr/7.3.0/include/**"
+			],
+			"forcedInclude": [
+				"C:/Users/${env:Username}/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.5/cores/arduino/Arduino.h"
+			],
+			"cStandard": "c17",
+			"cppStandard": "c++17",
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"ESP32"
+			]
+		}
+	]
+}
