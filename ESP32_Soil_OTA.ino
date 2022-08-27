@@ -62,7 +62,7 @@ const char *tempFTopic = "backYard/plantWatering/soil/tempF";			  // The topic u
 const char *moistureTopic = "backYard/plantWatering/soil/moisture";	  // The topic used to publish the soil moisture.
 const char *mqttStatsTopic = "espStats";										  // The topic this device will publish to upon connection to the broker.
 const char *mqttTopic = "espWeather";											  // The topic used to publish a single JSON message containing all data.
-const unsigned int LED_PIN = 2;													  // Use this LED for notifyications.
+const unsigned int LED_PIN = 2;													  // Use this LED for notifications.
 const unsigned int sdaGPIO = 33;													  // The GPIO to use for SDA.
 const unsigned int sclGPIO = 22;													  // The GPIO to use for SCL.
 const unsigned int relayGPIO = 4;												  // The GPIO which controls the relay.
@@ -140,7 +140,7 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 	{
 		Serial.println( "Changing the publish interval." );
 		unsigned long tempValue = callbackJsonDoc["value"];
-		// Only update the value if it is greater than 4 seconds.  This prevents a seconds vs. milliseconds mixup.
+		// Only update the value if it is greater than 4 seconds.  This prevents a seconds vs. milliseconds confusion.
 		if( tempValue > 4000 )
 			publishInterval = tempValue;
 		Serial.print( "MQTT publish interval has been updated to " );
