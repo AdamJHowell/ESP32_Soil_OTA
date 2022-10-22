@@ -30,7 +30,7 @@
 #include "WiFi.h"		// ESP32 Wifi support.  https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFi.h
 #include <ESPmDNS.h> // OTA - Multicast DNS for the ESP32.
 #else
-#include "WiFi.h" // Arduino Wifi support.  This header is part of the standard library.  https://www.arduino.cc/en/Reference/WiFi
+#include "WiFi.h" // Arduino Wi-Fi support.  This header is part of the standard library.  https://www.arduino.cc/en/Reference/WiFi
 #endif
 #include <Wire.h>				  // This header is part of the standard library.  https://www.arduino.cc/en/reference/wire
 #include <PubSubClient.h>	  // PubSub is the MQTT API.  Author: Nick O'Leary  https://github.com/knolleary/pubsubclient
@@ -45,7 +45,7 @@
  * If you do not want to create that file, set them here instead.
  */
 //const char* wifiSsid = "your WiFi SSID";
-//const char* wifiPassword = "your WiFi password";
+//const char* wifiPassword = "your Wi-Fi password";
 //const char* mqttBroker = "your broker address";
 //const int mqttPort = 1883;
 const char *hostName = "ESP32_Soil_OTA";
@@ -54,7 +54,7 @@ const char *commandTopic = "backYard/plantWatering/command";			  // The topic us
 const char *sketchTopic = "backYard/plantWatering/sketch";				  // The topic used to publish the sketch name.
 const char *macTopic = "backYard/plantWatering/mac";						  // The topic used to publish the MAC address.
 const char *ipTopic = "backYard/plantWatering/ip";							  // The topic used to publish the IP address.
-const char *rssiTopic = "backYard/plantWatering/rssi";					  // The topic used to publish the WiFi Received Signal Strength Indicator.
+const char *rssiTopic = "backYard/plantWatering/rssi";					  // The topic used to publish the Wi-Fi Received Signal Strength Indicator.
 const char *publishCountTopic = "backYard/plantWatering/publishCount"; // The topic used to publish the loop count.
 const char *notesTopic = "backYard/plantWatering/notes";					  // The topic used to publish notes relevant to this project.
 const char *tempCTopic = "backYard/plantWatering/soil/tempC";			  // The topic used to publish the soil temperature in Celsius.
@@ -199,31 +199,31 @@ void readTelemetry()
 
 
 /*
- * wifiConnect() will attempt to connect to the defined WiFi network up to maxAttempts times.
+ * wifiConnect() will attempt to connect to the defined Wi-Fi network up to maxAttempts times.
  */
 void wifiConnect( int maxAttempts )
 {
-	// Announce WiFi parameters.
+	// Announce Wi-Fi parameters.
 	Serial.print( "WiFi connecting to SSID: " );
 	Serial.println( wifiSsid );
 	WiFi.config( INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE );
 	//WiFi.setHostname( hostName );
 
 
-	// Connect to the WiFi network.
+	// Connect to the Wi-Fi network.
 	Serial.printf( "Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode( WIFI_STA ) ? "" : " - Failed!" );
 	WiFi.begin( wifiSsid, wifiPassword );
 
 	int i = 1;
 	/*
      WiFi.status() return values:
-     0 : WL_IDLE_STATUS when WiFi is in process of changing between statuses
+     0 : WL_IDLE_STATUS when Wi-Fi is in process of changing between statuses
      1 : WL_NO_SSID_AVAIL in case configured SSID cannot be reached
      3 : WL_CONNECTED after successful connection is established
      4 : WL_CONNECT_FAILED if wifiPassword is incorrect
      6 : WL_DISCONNECTED if module is not configured in station mode
   */
-	// Loop until WiFi has connected.
+	// Loop until Wi-Fi has connected.
 	while( WiFi.status() != WL_CONNECTED && i < maxAttempts )
 	{
 		digitalWrite( LED_PIN, 1 ); // Turn the LED off.
@@ -240,7 +240,7 @@ void wifiConnect( int maxAttempts )
 		WiFi.setAutoReconnect( true );
 		WiFi.persistent( true );
 
-		// Print that WiFi has connected.
+		// Print that Wi-Fi has connected.
 		Serial.println( '\n' );
 		Serial.println( "WiFi connection established!" );
 		Serial.print( "MAC address: " );
@@ -249,7 +249,7 @@ void wifiConnect( int maxAttempts )
 		snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
 		Serial.println( ipAddress );
 
-		digitalWrite( LED_PIN, 0 ); // Turn the WiFi LED on.
+		digitalWrite( LED_PIN, 0 ); // Turn the Wi-Fi LED on.
 	}
 } // End of wifiConnect() function.
 
@@ -620,7 +620,7 @@ void runPump()
 
 void loop()
 {
-	// Reconnect to WiFi if necessary.
+	// Reconnect to Wi-Fi if necessary.
 	if( WiFi.status() != WL_CONNECTED )
 		wifiConnect( 10 );
 	// Check the mqttClient connection state.
