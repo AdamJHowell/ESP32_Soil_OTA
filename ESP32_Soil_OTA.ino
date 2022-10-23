@@ -1,5 +1,5 @@
 /**
- * This sketch will use an Adafruit I2C soil sensor to show soil moisture and temperature levels.
+ * @brief This sketch will use an Adafruit I2C soil sensor to show soil moisture and temperature levels.
  * The ESP32 I2C SCL is on GPIO22, and SDA is GPIO33.
  * The first relay pin is on GPIO04.
  *
@@ -155,8 +155,8 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 } // End of onReceiveCallback() function.
 
 
-/*
- * readTelemetry() will:
+/**
+ * @brief readTelemetry() will:
  * 1. read from all available sensors
  * 2. store legitimate values in global variables
  * 3. set a flag if any value is invalid
@@ -198,8 +198,8 @@ void readTelemetry()
 }
 
 
-/*
- * wifiConnect() will attempt to connect to the defined Wi-Fi network up to maxAttempts times.
+/**
+ * @brief wifiConnect() will attempt to connect to the defined Wi-Fi network up to maxAttempts times.
  */
 void wifiConnect( int maxAttempts )
 {
@@ -253,8 +253,9 @@ void wifiConnect( int maxAttempts )
 	}
 } // End of wifiConnect() function.
 
-
-// mqttConnect() will attempt to (re)connect the MQTT client.
+/**
+ * @brief mqttConnect() will attempt to (re)connect the MQTT client.
+ */
 bool mqttConnect( int maxAttempts )
 {
 	digitalWrite( LED_PIN, 1 ); // Turn the LED off.
@@ -318,8 +319,8 @@ bool mqttConnect( int maxAttempts )
 } // End of mqttConnect() function.
 
 
-/*
- * setup() will initialize the device and connected components.
+/**
+ * @brief setup() will initialize the device and connected components.
  */
 void setup()
 {
@@ -374,7 +375,6 @@ void setup()
 
 /**
  * @brief configureOTA() will configure and initiate Over The Air (OTA) updates for this device.
- *
  */
 void configureOTA()
 {
@@ -434,8 +434,8 @@ void configureOTA()
 } // End of the configureOTA() function.
 
 
-/*
- * printUptime() will print the uptime to the serial port.
+/**
+ * @brief printUptime() will print the uptime to the serial port.
  */
 void printUptime()
 {
@@ -461,8 +461,8 @@ void printUptime()
 } // End of printUptime() function.
 
 
-/*
- * printTelemetry() will print the sensor and device data to the serial port.
+/**
+ * @brief printTelemetry() will print the sensor and device data to the serial port.
  */
 void printTelemetry()
 {
@@ -475,8 +475,8 @@ void printTelemetry()
 } // End of printTelemetry() function.
 
 
-/*
- * publishTelemetry() will publish the sensor and device data over MQTT.
+/**
+ * @brief publishTelemetry() will publish the sensor and device data over MQTT.
  */
 void publishTelemetry()
 {
@@ -538,8 +538,8 @@ void publishTelemetry()
 } // End of publishTelemetry() function.
 
 
-/*
- * publishStats() is called by mqttMultiConnect() every time the device (re)connects to the broker, and every publishInterval milliseconds thereafter.
+/**
+ * @brief publishStats() is called by mqttMultiConnect() every time the device (re)connects to the broker, and every publishInterval milliseconds thereafter.
  * It is also called by the callback when the "publishStats" command is received.
  */
 void publishStats()
@@ -567,8 +567,8 @@ void publishStats()
 } // End of publishStats() function.
 
 
-/*
- * runPump() will turn the pump on and off as needed.
+/**
+ * @brief runPump() will turn the pump on and off as needed.
  *
  * The pump will turn on when:
  * 	The pump is not currently running.
