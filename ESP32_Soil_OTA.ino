@@ -96,6 +96,12 @@ PubSubClient mqttClient( espClient );
 Adafruit_seesaw soilSensor;
 
 
+/**
+ * @brief onReceiveCallback() processes MQTT callbacks.
+ * @param topic the topic that the message arrived on.
+ * @param payload the message to process.
+ * @param length the length of the payload in bytes.
+ */
 void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 {
 	Serial.printf( "Message arrived [%s]\n", topic );
@@ -195,7 +201,7 @@ void readTelemetry()
 		Serial.println( "Resetting the device!\n\n\n" );
 		ESP.restart();
 	}
-}
+} // End of readTelemetry() function.
 
 
 /**
@@ -252,6 +258,7 @@ void wifiConnect( int maxAttempts )
 		digitalWrite( LED_PIN, 0 ); // Turn the Wi-Fi LED on.
 	}
 } // End of wifiConnect() function.
+
 
 /**
  * @brief mqttConnect() will attempt to (re)connect the MQTT client.
@@ -324,10 +331,10 @@ bool mqttConnect( int maxAttempts )
  */
 void setup()
 {
-	delay( 1000 );					 // A pause to give me time to open the serial monitor.
-	pinMode( LED_PIN, OUTPUT ); // Initialize the GPIO which controls the LED as an output.
-	digitalWrite( LED_PIN, 0 ); // Turn the LED on.
-	Wire.begin();					 // Initialize I2C communication.
+	delay( 1000 );						// A pause to give me time to open the serial monitor.
+	pinMode( LED_PIN, OUTPUT );	// Initialize the GPIO which controls the LED as an output.
+	digitalWrite( LED_PIN, 0 );	// Turn the LED on.
+	Wire.begin();						// Initialize I2C communication.
 
 	Serial.begin( 115200 );
 	if( !Serial )
@@ -630,7 +637,6 @@ void loop()
 	mqttClient.loop();
 
 	ArduinoOTA.handle();
-	yield();
 
 	// Check if the pump should be run.
 	runPump();

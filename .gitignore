@@ -2,6 +2,7 @@
 *.iml
 privateInfo.*
 networkVariables.h
+cmake-build-*/
 
 # Prerequisites
 *.d
