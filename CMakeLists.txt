@@ -6,6 +6,7 @@ set( CMAKE_CXX_STANDARD 14 )
 include_directories( . )
 
 add_executable( ESP32_Soil_OTA
-		ESP32_Soil_OTA.ino )
+		ESP32_Soil_OTA.ino
+		privateInfo.h )
 
 set_target_properties( ESP32_Soil_OTA PROPERTIES LINKER_LANGUAGE CXX )
