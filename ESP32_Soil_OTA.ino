@@ -106,8 +106,8 @@ Adafruit_seesaw soilSensor;
  */
 void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 {
-	Serial.printf( "Message arrived [%s]\n", topic );
-	// Add the null terminator.
+	Serial.printf( "\nMessage arrived on Topic: '%s'\n", topic );
+
 	StaticJsonDocument<JSON_DOC_SIZE> callbackJsonDoc;
 	deserializeJson( callbackJsonDoc, payload, length );
 
@@ -156,10 +156,7 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 		lastPublishTime = 0;
 	}
 	else
-	{
-		Serial.print( "Unknown command: " );
-		Serial.println( command );
-	}
+		Serial.printf( "Unknown command '%s'\n", command );
 } // End of onReceiveCallback() function.
 
 
@@ -524,7 +521,7 @@ void publishTelemetry()
 	{
 		Serial.println( "Successfully published to:" );
 		char buffer[20];
-		// New format: <location>/<device>/<sensor>/<metric>
+		// New format: <location>/<device>/<sensor>/<value>
 		if( mqttClient.publish( sketchTopic, __FILE__, false ) )
 			Serial.printf( "  %s\n", sketchTopic );
 		if( mqttClient.publish( macTopic, macAddress, false ) )
