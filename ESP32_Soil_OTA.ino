@@ -48,48 +48,49 @@
 //const char* wifiPassword = "your Wi-Fi password";
 //const char* mqttBroker = "your broker address";
 //const int mqttPort = 1883;
-const char *hostName = "ESP32_Soil_OTA";											// The network hostname to set.
-const char *notes = "HiLetgo ESP32 with Adafruit I2C soil sensor";		// Notes about this program.
-const char *commandTopic = "backYard/plantWatering/command";				// The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
-const char *sketchTopic = "backYard/plantWatering/sketch";					// The topic used to publish the sketch name.
-const char *macTopic = "backYard/plantWatering/mac";							// The topic used to publish the MAC address.
-const char *ipTopic = "backYard/plantWatering/ip";								// The topic used to publish the IP address.
-const char *rssiTopic = "backYard/plantWatering/rssi";						// The topic used to publish the Wi-Fi Received Signal Strength Indicator.
-const char *publishCountTopic = "backYard/plantWatering/publishCount";	// The topic used to publish the loop count.
-const char *notesTopic = "backYard/plantWatering/notes";						// The topic used to publish notes relevant to this project.
-const char *tempCTopic = "backYard/plantWatering/soil/tempC";				// The topic used to publish the soil temperature in Celsius.
-const char *tempFTopic = "backYard/plantWatering/soil/tempF";				// The topic used to publish the soil temperature in Fahrenheit.
-const char *moistureTopic = "backYard/plantWatering/soil/moisture";		// The topic used to publish the soil moisture.
-const char *mqttStatsTopic = "espStats";											// The topic this device will publish to upon connection to the broker.
-const char *mqttTopic = "espWeather";												// The topic used to publish a single JSON message containing all data.
-const unsigned int LED_PIN = 2;														// Use this LED for notifications.
-const unsigned int sdaGPIO = 33;														// The GPIO to use for SDA.
-const unsigned int sclGPIO = 22;														// The GPIO to use for SCL.
-const unsigned int relayGPIO = 4;													// The GPIO which controls the relay.
-const int JSON_DOC_SIZE = 512;														// The ArduinoJson document size.
-unsigned int mqttReconnectDelay = 5000;											// How long to wait (in milliseconds) between MQTT connection attempts.
-unsigned long publishCount = 0;														// A count of how many publishes have taken place.
-unsigned long publishInterval = 60000;												// The delay in milliseconds between MQTT publishes.  This prevents "flooding" the broker.
-unsigned long sensorPollDelay = 10000;												// This is the delay between polls of the soil sensor.  This should be greater than 100 milliseconds.
-unsigned long pumpRunTime = 20000;													// Minimum time to run the pump.
-unsigned long pumpMinOffDelay = 20000;												// The time to wait after stopping, before the pump will start again.  This allows water to flow through the soil.
-unsigned long lastPublishTime = 0;													// This is used to determine the time since last MQTT publish.
-unsigned long lastMqttConnectionTime = 0;											// The last time a MQTT connection was attempted.
-unsigned int mqttReconnectCooldown = 20000;										// Set the minimum time between calls to mqttMultiConnect() to 20 seconds.
-unsigned long lastPollTime = 0;														// This is used to determine the time since last sensor poll.
-unsigned long bootTime = 0;															// The time since boot.  This value "rolls" at about 50 days.
-unsigned long pumpStartTime = 0;														// The most recent time that the pump started.
-unsigned long pumpStopTime = 0;														// The most recent time that the pump stopped.
-char ipAddress[16];																		// The IP address.
-char macAddress[18];																		// The MAC address to use as part of the MQTT client ID.
-bool pumpRunning = false;																// Flag to indicate when the pump is running or not.
-unsigned int invalidTemp = 0;															// Holds the current number of consecutive invalid temperature readings.
-unsigned int invalidMoisture = 0;													// Holds the current number of consecutive invalid humidity readings.
-float tempC;																				// A global to hold the temperature in Celsius.
-float tempF;																				// A global to hold the temperature in Fahrenheit.
-long rssi;																					// A global to hold the Received Signal Strength Indicator.
-uint16_t soilMoisture = 0;																// The soil moisture level (capacitance).
-uint16_t minMoisture = 500;															// The moisture level which triggers the pump.
+//const char *otaPass = "nunya";
+const char *hostName = "ESP32_Soil_OTA";										  // The network hostname to set.
+const char *notes = "HiLetgo ESP32 with Adafruit I2C soil sensor";	  // Notes about this program.
+const char *commandTopic = "backYard/plantWatering/command";			  // The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
+const char *sketchTopic = "backYard/plantWatering/sketch";				  // The topic used to publish the sketch name.
+const char *macTopic = "backYard/plantWatering/mac";						  // The topic used to publish the MAC address.
+const char *ipTopic = "backYard/plantWatering/ip";							  // The topic used to publish the IP address.
+const char *rssiTopic = "backYard/plantWatering/rssi";					  // The topic used to publish the Wi-Fi Received Signal Strength Indicator.
+const char *publishCountTopic = "backYard/plantWatering/publishCount"; // The topic used to publish the loop count.
+const char *notesTopic = "backYard/plantWatering/notes";					  // The topic used to publish notes relevant to this project.
+const char *tempCTopic = "backYard/plantWatering/soil/tempC";			  // The topic used to publish the soil temperature in Celsius.
+const char *tempFTopic = "backYard/plantWatering/soil/tempF";			  // The topic used to publish the soil temperature in Fahrenheit.
+const char *moistureTopic = "backYard/plantWatering/soil/moisture";	  // The topic used to publish the soil moisture.
+const char *mqttStatsTopic = "espStats";										  // The topic this device will publish to upon connection to the broker.
+const char *mqttTopic = "espWeather";											  // The topic used to publish a single JSON message containing all data.
+const unsigned int LED_PIN = 2;													  // Use this LED for notifications.
+const unsigned int sdaGPIO = 33;													  // The GPIO to use for SDA.
+const unsigned int sclGPIO = 22;													  // The GPIO to use for SCL.
+const unsigned int relayGPIO = 4;												  // The GPIO which controls the relay.
+const int JSON_DOC_SIZE = 512;													  // The ArduinoJson document size.
+unsigned int mqttReconnectDelay = 5000;										  // How long to wait (in milliseconds) between MQTT connection attempts.
+unsigned long publishCount = 0;													  // A count of how many publishes have taken place.
+unsigned long publishInterval = 60000;											  // The delay in milliseconds between MQTT publishes.  This prevents "flooding" the broker.
+unsigned long sensorPollDelay = 10000;											  // This is the delay between polls of the soil sensor.  This should be greater than 100 milliseconds.
+unsigned long pumpRunTime = 20000;												  // Minimum time to run the pump.
+unsigned long pumpMinOffDelay = 20000;											  // The time to wait after stopping, before the pump will start again.  This allows water to flow through the soil.
+unsigned long lastPublishTime = 0;												  // This is used to determine the time since last MQTT publish.
+unsigned long lastMqttConnectionTime = 0;										  // The last time a MQTT connection was attempted.
+unsigned int mqttReconnectCooldown = 20000;									  // Set the minimum time between calls to mqttMultiConnect() to 20 seconds.
+unsigned long lastPollTime = 0;													  // This is used to determine the time since last sensor poll.
+unsigned long bootTime = 0;														  // The time since boot.  This value "rolls" at about 50 days.
+unsigned long pumpStartTime = 0;													  // The most recent time that the pump started.
+unsigned long pumpStopTime = 0;													  // The most recent time that the pump stopped.
+char ipAddress[16];																	  // The IP address.
+char macAddress[18];																	  // The MAC address to use as part of the MQTT client ID.
+bool pumpRunning = false;															  // Flag to indicate when the pump is running or not.
+unsigned int invalidTemp = 0;														  // Holds the current number of consecutive invalid temperature readings.
+unsigned int invalidMoisture = 0;												  // Holds the current number of consecutive invalid humidity readings.
+float tempC;																			  // A global to hold the temperature in Celsius.
+float tempF;																			  // A global to hold the temperature in Fahrenheit.
+long rssi;																				  // A global to hold the Received Signal Strength Indicator.
+uint16_t soilMoisture = 0;															  // The soil moisture level (capacitance).
+uint16_t minMoisture = 500;														  // The moisture level which triggers the pump.
 
 
 // Create class objects.
@@ -188,7 +189,7 @@ void readTelemetry()
 		invalidMoisture = 0;
 	}
 	else
-			invalidMoisture++;
+		invalidMoisture++;
 
 	// If either invalid count is too high, reset the device.
 	if( invalidTemp > 4 || invalidMoisture > 4 )
@@ -342,10 +343,10 @@ bool mqttConnect( int maxAttempts )
  */
 void setup()
 {
-	delay( 1000 );						// A pause to give me time to open the serial monitor.
-	pinMode( LED_PIN, OUTPUT );	// Initialize the GPIO which controls the LED as an output.
-	digitalWrite( LED_PIN, 0 );	// Turn the LED on.
-	Wire.begin();						// Initialize I2C communication.
+	delay( 1000 );					 // A pause to give me time to open the serial monitor.
+	pinMode( LED_PIN, OUTPUT ); // Initialize the GPIO which controls the LED as an output.
+	digitalWrite( LED_PIN, 0 ); // Turn the LED on.
+	Wire.begin();					 // Initialize I2C communication.
 
 	Serial.begin( 115200 );
 	if( !Serial )
@@ -399,12 +400,47 @@ void configureOTA()
 	Serial.println( "Configuring OTA." );
 
 #ifdef ESP8266
-	// The ESP8266 port defaults to 8266
-	// ArduinoOTA.setPort( 8266 );
-	// The ESP8266 hostname defaults to esp8266-[ChipID]
+	Serial.println( "Configuring OTA for the ESP8266" );
+	// Port defaults to 8266
+	// ArduinoOTA.setPort(8266);
+
+	// Hostname defaults to esp8266-[ChipID]
 	ArduinoOTA.setHostname( hostName );
-	// Authentication is disabled by default.
-	// ArduinoOTA.setPassword( ( const char * )"admin" );
+
+	// No authentication by default
+	ArduinoOTA.setPassword( otaPass );
+
+	// Password can be set with it's md5 value as well
+	// MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+	// ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+
+	ArduinoOTA.onStart( []()
+							  {
+								  String type;
+								  if( ArduinoOTA.getCommand() == U_FLASH )
+									  type = "sketch";
+								  else // U_SPIFFS
+									  type = "filesystem";
+
+								  // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+								  Serial.println( "Start updating " + type ); } );
+	ArduinoOTA.onEnd( []()
+							{ Serial.println( "\nEnd" ); } );
+	ArduinoOTA.onProgress( []( unsigned int progress, unsigned int total )
+								  { Serial.printf( "Progress: %u%%\r", ( progress / ( total / 100 ) ) ); } );
+	ArduinoOTA.onError( []( ota_error_t error )
+							  {
+								  Serial.printf( "Error[%u]: ", error );
+								  if( error == OTA_AUTH_ERROR ) Serial.println( "Auth Failed" );
+								  else if( error == OTA_BEGIN_ERROR )
+									  Serial.println( "Begin Failed" );
+								  else if( error == OTA_CONNECT_ERROR )
+									  Serial.println( "Connect Failed" );
+								  else if( error == OTA_RECEIVE_ERROR )
+									  Serial.println( "Receive Failed" );
+								  else if( error == OTA_END_ERROR )
+									  Serial.println( "End Failed" ); } );
+	ArduinoOTA.begin();
 #elif ESP32
 	// The ESP32 port defaults to 3232
 	// ArduinoOTA.setPort( 3232 );
@@ -422,23 +458,25 @@ void configureOTA()
 
 	Serial.printf( "Using hostname '%s'\n", hostName );
 
-	String type = "filesystem";	// SPIFFS
+	String type = "filesystem"; // SPIFFS
 	if( ArduinoOTA.getCommand() == U_FLASH )
 		type = "sketch";
 
 	// Configure the OTA callbacks.
 	ArduinoOTA.onStart( []()
-	{
+							  {
 		String type = "flash";	// U_FLASH
 		if( ArduinoOTA.getCommand() == U_SPIFFS )
 			type = "filesystem";
 		// NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
 		Serial.print( "OTA is updating the " );
-		Serial.println( type );
-	} );
-	ArduinoOTA.onEnd( []() { Serial.println( "\nTerminating OTA communication." ); } );
-	ArduinoOTA.onProgress( []( unsigned int progress, unsigned int total ){ Serial.printf( "OTA progress: %u%%\r", ( progress / ( total / 100 ) ) ); } );
-	ArduinoOTA.onError( []( ota_error_t error ){
+		Serial.println( type ); } );
+	ArduinoOTA.onEnd( []()
+							{ Serial.println( "\nTerminating OTA communication." ); } );
+	ArduinoOTA.onProgress( []( unsigned int progress, unsigned int total )
+								  { Serial.printf( "OTA progress: %u%%\r", ( progress / ( total / 100 ) ) ); } );
+	ArduinoOTA.onError( []( ota_error_t error )
+							  {
 		Serial.printf( "Error[%u]: ", error );
 		if( error == OTA_AUTH_ERROR ) Serial.println( "OTA authentication failed!" );
 		else if( error == OTA_BEGIN_ERROR ) Serial.println( "OTA transmission failed to initiate properly!" );
