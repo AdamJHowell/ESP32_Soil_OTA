@@ -433,7 +433,8 @@ void configureOTA()
 		if( ArduinoOTA.getCommand() == U_SPIFFS )
 			type = "filesystem";
 		// NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-		Serial.printf( "OTA is updating the %s\n", type );
+		Serial.print( "OTA is updating the " );
+		Serial.println( type );
 	} );
 	ArduinoOTA.onEnd( []() { Serial.println( "\nTerminating OTA communication." ); } );
 	ArduinoOTA.onProgress( []( unsigned int progress, unsigned int total ){ Serial.printf( "OTA progress: %u%%\r", ( progress / ( total / 100 ) ) ); } );
