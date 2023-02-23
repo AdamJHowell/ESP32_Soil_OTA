@@ -33,17 +33,13 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 		publishTelemetry();
 		Serial.println( "Readings have been published." );
 	}
-	else if( strcmp( command, "publishStatus" ) == 0 )
-	{
-		Serial.println( "publishStatus is not yet implemented." );
-	}
 	else if( strcmp( command, "pumpOn" ) == 0 )
 	{
 		unsigned long currentTime = millis();
 		// Note the start time.
 		pumpStartTime = currentTime;
 		// Turn the relay (pump) on.  This relay board switches on when the pin is pulled low.
-		digitalWrite( relayGPIO, LED_OFF );
+		digitalWrite( RELAY_GPIO, LED_OFF );
 		Serial.println( "Turning the pump on." );
 	}
 	else if( strcmp( command, "pumpOff" ) == 0 )
@@ -52,7 +48,7 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 		// Note the stop time.
 		pumpStopTime = currentTime;
 		// Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
-		digitalWrite( relayGPIO, LED_ON );
+		digitalWrite( RELAY_GPIO, LED_ON );
 		Serial.println( "Turning the pump off." );
 	}
 	else if( strcmp( command, "changeTelemetryInterval" ) == 0 )
@@ -82,7 +78,7 @@ void configureOTA()
 	// ArduinoOTA.setPort(8266);
 
 	// Hostname defaults to esp8266-[ChipID]
-	ArduinoOTA.setHostname( hostName );
+	ArduinoOTA.setHostname( HOSTNAME );
 
 	// No authentication by default
 	ArduinoOTA.setPassword( otaPass );
@@ -122,13 +118,13 @@ void configureOTA()
 	// The ESP32 port defaults to 3232
 	// ArduinoOTA.setPort( 3232 );
 	// The ESP32 hostname defaults to esp32-[MAC]
-	//	ArduinoOTA.setHostname( hostName );  // I'm deliberately using the default.
+	//	ArduinoOTA.setHostname( HOSTNAME );  // I'm deliberately using the default.
 	// Authentication is disabled by default.
 	ArduinoOTA.setPassword( otaPass );
 	// Password can be set with it's md5 value as well
 	// MD5( admin ) = 21232f297a57a5a743894a0e4a801fc3
 	// ArduinoOTA.setPasswordHash( "21232f297a57a5a743894a0e4a801fc3" );
-	//	Serial.printf( "Using hostname '%s'\n", hostName );
+	//	Serial.printf( "Using hostname '%s'\n", HOSTNAME );
 
 	String type = "filesystem"; // SPIFFS
 	if( ArduinoOTA.getCommand() == U_FLASH )
@@ -202,7 +198,7 @@ bool wifiConnect( const char *ssid, const char *password )
 
 	Serial.printf( "Attempting to connect to Wi-Fi SSID '%s'", ssid );
 	WiFi.mode( WIFI_STA );
-	//   WiFi.setHostname( hostName );
+	//   WiFi.setHostname( HOSTNAME );
 	WiFi.begin( ssid, password );
 
 	unsigned long wifiConnectionStartTime = millis();
@@ -279,7 +275,7 @@ void wifiMultiConnect()
  * mqttMultiConnect() will:
  * 1. Check the WiFi connection, and reconnect WiFi as needed.
  * 2. Attempt to connect the MQTT client up to 'maxAttempts' number of times.
- * 3. Subscribe to the topic defined in 'commandTopic'.
+ * 3. Subscribe to the topic defined in 'COMMAND_TOPIC'.
  * If the broker connection cannot be made, an error will be printed to the serial port.
  */
 bool mqttMultiConnect( int maxAttempts )
@@ -294,6 +290,7 @@ bool mqttMultiConnect( int maxAttempts )
 	// Loop until MQTT has connected.
 	while( !mqttClient.connected() && attemptNumber < maxAttempts )
 	{
+		mqttConnectCount++;
 		// Put the macAddress and random number into clientId.
 		char clientId[22];
 		snprintf( clientId, 22, "%s-%03ld", macAddress, random( 999 ) );
@@ -311,10 +308,10 @@ bool mqttMultiConnect( int maxAttempts )
 				ESP.restart();
 			}
 			// Subscribe to the command topic.
-			if( mqttClient.subscribe( commandTopic ) )
-				Serial.printf( "Successfully subscribed to topic '%s'.\n", commandTopic );
+			if( mqttClient.subscribe( COMMAND_TOPIC ) )
+				Serial.printf( "Successfully subscribed to topic '%s'.\n", COMMAND_TOPIC );
 			else
-				Serial.printf( "Failed to subscribe to topic '%s'!\n", commandTopic );
+				Serial.printf( "Failed to subscribe to topic '%s'!\n", COMMAND_TOPIC );
 		}
 		else
 		{

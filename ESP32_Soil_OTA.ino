@@ -11,7 +11,7 @@
  * @license     The MIT License (MIT)
  *
  * Pseudocode:
- * 1. Read the soil moisture level (capacitance) every sensorPollDelay.
+ * 1. Read the soil moisture level (capacitance) every sensorPollInterval.
  * 2. Read the temperature from the soil moisture sensor.
  * 3. If moisture is less than minMoisture, run pump for pumpRunTime.
  * The pump is run in pumpRunTime millisecond increments instead of waiting for the reading to get above the minimum level.  Waiting could result in over watering.
@@ -34,11 +34,13 @@
  */
 void readTelemetry()
 {
+	rssi = WiFi.RSSI();
+
 	float temporarySoilTempC = soilSensor.getTemp();
 	uint16_t temporarySoilMoisture = soilSensor.touchRead( 0 );
 
 	// Define the valid temperature range (in Celsius) for this sensor.
-	if( temporarySoilTempC > -20 || temporarySoilTempC < 70 )
+	if( temporarySoilTempC > -20 && temporarySoilTempC < 100 )
 	{
 		tempC = temporarySoilTempC;
 		tempF = ( tempC * 9 / 5 ) + 32;
@@ -48,7 +50,7 @@ void readTelemetry()
 		invalidTemp++;
 
 	// Define the valid moisture range for this sensor.
-	if( temporarySoilMoisture > 100 || temporarySoilMoisture < 2000 )
+	if( temporarySoilMoisture > 200 && temporarySoilMoisture < 2000 )
 	{
 		soilMoisture = temporarySoilMoisture;
 		invalidMoisture = 0;
@@ -57,12 +59,12 @@ void readTelemetry()
 		invalidMoisture++;
 
 	// If either invalid count is too high, reset the device.
-	if( invalidTemp > 4 || invalidMoisture > 4 )
+	if( invalidTemp > 10 || invalidMoisture > 10 )
 	{
 		Serial.println( "\n\n\n\n" );
 		Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
 		Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
-		mqttClient.publish( mqttStatsTopic, "Resetting the device due to invalid sensor readings!", false );
+		mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
 		Serial.println( "Resetting the device!\n\n\n" );
 		ESP.restart();
 	}
@@ -74,22 +76,21 @@ void readTelemetry()
  */
 void setup()
 {
-	delay( 1000 );					 // A pause to give me time to open the serial monitor.
-	pinMode( MCU_LED, OUTPUT ); // Initialize the GPIO which controls the LED as an output.
+	delay( 1000 );							// A pause to give me time to open the serial monitor.
+	pinMode( MCU_LED, OUTPUT );		// Initialize the GPIO which controls the LED as an output.
 	digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
-	Wire.begin();					 // Initialize I2C communication.
+	Wire.begin();							// Initialize I2C communication.
 
 	Serial.begin( 115200 );
 	if( !Serial )
 		delay( 1000 );
 
 	Serial.println( '\n' );
-	Serial.print( __FILE__ );
-	Serial.println( " is beginning its setup()." );
+	Serial.println( "The setup() function is beginning." );
 	Serial.println( __FILE__ );
 
-	pinMode( relayGPIO, OUTPUT );	  // Set the replay (pump) GPIO as an output.
-	digitalWrite( relayGPIO, LED_OFF ); // Turn the relay (pump) off.
+	pinMode( RELAY_GPIO, OUTPUT );			 // Set the replay (pump) GPIO as an output.
+	digitalWrite( RELAY_GPIO, PUMP_OFF ); // Turn the relay (pump) off.
 
 	// Set the ipAddress char array to a default value.
 	snprintf( ipAddress, 16, "127.0.0.1" );
@@ -115,6 +116,8 @@ void setup()
 	Serial.printf( "IP address: %s\n", ipAddress );
 
 	printUptime();
+
+	Serial.println( "The setup() function has completed." );
 } // End of setup() function.
 
 
@@ -172,11 +175,24 @@ void printTelemetry()
 	Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
 	Serial.println();
 
-	Serial.printf( "Broker: %s:%d\n", mqttClient.getServerDomain(), mqttClient.getServerPort() );
-	Serial.printf( "Temperature: %.2f C\n", tempC );
-	Serial.printf( "Temperature: %.2f F\n", tempF );
-	Serial.printf( "Moisture: %.2f %%\n", soilMoisture );
-	Serial.printf( "WiFi RSSI: %ld\n", rssi );
+	Serial.println( "MQTT stats:" );
+	Serial.printf( "  mqttConnectCount: %u\n", mqttConnectCount );
+	Serial.printf( "  mqttCoolDownInterval: %lu\n", mqttCoolDownInterval );
+	Serial.printf( "  Broker: %s:%d\n", mqttClient.getServerDomain(), mqttClient.getServerPort() );
+	lookupMQTTCode( mqttClient.state(), buffer );
+	Serial.printf( "  MQTT state: %s\n", buffer );
+	Serial.printf( "  Publish count: %lu\n", publishCount );
+	Serial.printf( "  Callback count: %lu\n", callbackCount );
+	Serial.println();
+
+	Serial.println( "Environmental stats:" );
+	Serial.printf( "  Temperature: %.2f C\n", tempC );
+	Serial.printf( "  Temperature: %.2f F\n", tempF );
+	Serial.printf( "  Moisture: %.2f %%\n", soilMoisture );
+	Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
+	Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
+	Serial.println();
+
 	printUptime();
 } // End of printTelemetry() function.
 
@@ -186,91 +202,35 @@ void printTelemetry()
  */
 void publishTelemetry()
 {
-	// Create a JSON Document on the stack.
-	StaticJsonDocument<JSON_DOC_SIZE> publishTelemetryJsonDoc;
-	// Add data: __FILE__, macAddress, ipAddress, tempC, tempF, soilMoisture, rssi, publishCount, notes
-	publishTelemetryJsonDoc["sketch"] = __FILE__;
-	publishTelemetryJsonDoc["mac"] = macAddress;
-	publishTelemetryJsonDoc["ip"] = ipAddress;
-	publishTelemetryJsonDoc["tempC"] = tempC;
-	publishTelemetryJsonDoc["tempF"] = tempF;
-	publishTelemetryJsonDoc["soilMoisture"] = soilMoisture;
-	publishTelemetryJsonDoc["rssi"] = rssi;
-	publishTelemetryJsonDoc["publishCount"] = publishCount;
-	publishTelemetryJsonDoc["notes"] = notes;
+	Serial.println( "Successfully published to:" );
+	char buffer[20];
+	// New format: <location>/<device>/<sensor>/<value>
+	if( mqttClient.publish( SKETCH_TOPIC, __FILE__, false ) )
+		Serial.printf( "  %s\n", SKETCH_TOPIC );
+	if( mqttClient.publish( MAC_TOPIC, macAddress, false ) )
+		Serial.printf( "  %s\n", MAC_TOPIC );
+	if( mqttClient.publish( IP_TOPIC, ipAddress, false ) )
+		Serial.printf( "  %s\n", IP_TOPIC );
+	ltoa( rssi, buffer, 10 );
+	if( mqttClient.publish( RSSI_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", RSSI_TOPIC );
+	ltoa( publishCount, buffer, 10 );
+	if( mqttClient.publish( PUBLISH_COUNT_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", PUBLISH_COUNT_TOPIC );
+	if( mqttClient.publish( NOTES_TOPIC, NOTES, false ) )
+		Serial.printf( "  %s\n", NOTES_TOPIC );
+	dtostrf( tempC, 1, 3, buffer );
+	if( mqttClient.publish( TEMP_C_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", TEMP_C_TOPIC );
+	dtostrf( ( tempF ), 1, 3, buffer );
+	if( mqttClient.publish( TEMP_F_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", TEMP_F_TOPIC );
+	dtostrf( ( soilMoisture ), 1, 3, buffer );
+	if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", MOISTURE_TOPIC );
 
-	// Prepare a String to hold the JSON.
-	char mqttString[JSON_DOC_SIZE];
-	// Serialize the JSON into mqttString, with indentation and line breaks.
-	serializeJsonPretty( publishTelemetryJsonDoc, mqttString );
-	// Publish the JSON to the MQTT broker.
-	bool success = mqttClient.publish( mqttTopic, mqttString, false );
-	if( success )
-	{
-		Serial.println( "Successfully published to:" );
-		char buffer[20];
-		// New format: <location>/<device>/<sensor>/<value>
-		if( mqttClient.publish( sketchTopic, __FILE__, false ) )
-			Serial.printf( "  %s\n", sketchTopic );
-		if( mqttClient.publish( macTopic, macAddress, false ) )
-			Serial.printf( "  %s\n", macTopic );
-		if( mqttClient.publish( ipTopic, ipAddress, false ) )
-			Serial.printf( "  %s\n", ipTopic );
-		ltoa( rssi, buffer, 10 );
-		if( mqttClient.publish( rssiTopic, buffer, false ) )
-			Serial.printf( "  %s\n", rssiTopic );
-		ltoa( publishCount, buffer, 10 );
-		if( mqttClient.publish( publishCountTopic, buffer, false ) )
-			Serial.printf( "  %s\n", publishCountTopic );
-		if( mqttClient.publish( notesTopic, notes, false ) )
-			Serial.printf( "  %s\n", notesTopic );
-		dtostrf( tempC, 1, 3, buffer );
-		if( mqttClient.publish( tempCTopic, buffer, false ) )
-			Serial.printf( "  %s\n", tempCTopic );
-		dtostrf( ( tempF ), 1, 3, buffer );
-		if( mqttClient.publish( tempFTopic, buffer, false ) )
-			Serial.printf( "  %s\n", tempFTopic );
-		dtostrf( ( soilMoisture ), 1, 3, buffer );
-		if( mqttClient.publish( moistureTopic, buffer, false ) )
-			Serial.printf( "  %s\n", moistureTopic );
-
-		Serial.printf( "Successfully published to '%s', this JSON:\n", mqttTopic );
-	}
-	else
-		Serial.println( "MQTT publish failed!  Attempted to publish this JSON to the broker:" );
-	// Print the JSON to the Serial port.
-	Serial.println( mqttString );
 	lastPublishTime = millis();
 } // End of publishTelemetry() function.
-
-
-/**
- * @brief publishStats() is called by mqttMultiConnect() every time the device (re)connects to the broker, and every publishInterval milliseconds thereafter.
- * It is also called by the callback when the "publishStats" command is received.
- */
-void publishStats()
-{
-	char mqttStatsString[JSON_DOC_SIZE];
-	// Create a JSON Document on the stack.
-	StaticJsonDocument<JSON_DOC_SIZE> doc;
-	// Add data: __FILE__, macAddress, ipAddress, rssi, publishCount
-	doc["sketch"] = __FILE__;
-	doc["mac"] = macAddress;
-	doc["ip"] = ipAddress;
-	doc["rssi"] = rssi;
-	doc["publishCount"] = publishCount;
-
-	// Serialize the JSON into mqttStatsString, with indentation and line breaks.
-	serializeJsonPretty( doc, mqttStatsString );
-
-	if( mqttClient.connected() )
-	{
-		if( mqttClient.connected() && mqttClient.publish( mqttStatsTopic, mqttStatsString ) )
-			Serial.printf( "Published to this broker and port: %s:%d, and to this topic '%s':\n%s\n", mqttClient.getServerDomain(), mqttClient.getServerPort(), mqttStatsTopic, mqttStatsString );
-		else
-			Serial.println( "\n\nPublish failed!\n\n" );
-	}
-} // End of publishStats() function.
 
 
 /**
@@ -300,7 +260,7 @@ void runPump()
 			// Note the start time.
 			pumpStartTime = currentTime;
 			// Turn the relay (pump) on.  This relay board switches on when the pin is pulled to ground.
-			digitalWrite( relayGPIO, LED_OFF );
+			digitalWrite( RELAY_GPIO, PUMP_ON );
 			// Flag that the pump is now running.
 			pumpRunning = true;
 		}
@@ -316,7 +276,7 @@ void runPump()
 			// Note the start time.
 			pumpStopTime = currentTime;
 			// Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
-			digitalWrite( relayGPIO, LED_ON );
+			digitalWrite( RELAY_GPIO, PUMP_OFF );
 			// Flag that the pump has stopped.
 			pumpRunning = false;
 		}
@@ -339,15 +299,10 @@ void loop()
 
 	unsigned long time = millis();
 	// Poll the first time.  Avoid subtraction overflow.  Poll every interval.
-	if( lastPollTime == 0 || ( ( time > sensorPollDelay ) && ( time - sensorPollDelay ) > lastPollTime ) )
+	if( lastPollTime == 0 || ( ( time > sensorPollInterval ) && ( time - sensorPollInterval ) > lastPollTime ) )
 	{
 		readTelemetry();
-		Serial.print( "Temperature: " );
-		Serial.print( tempC );
-		Serial.println( " C" );
-		Serial.print( "Moisture: " );
-		Serial.println( soilMoisture );
-		Serial.println( "" );
+		printTelemetry();
 		lastPollTime = millis();
 	}
 
@@ -358,13 +313,12 @@ void loop()
 		publishCount++;
 		// These next 3 lines act as a "heartbeat", to give local users a visual indication that the system is working.
 		digitalWrite( MCU_LED, LED_OFF ); // Turn the LED off, to alert the user that a publish is about to take place.
-		delay( 1000 );					 // Wait for one second.
-		digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
+		delay( 1000 );							 // Wait for one second.
+		digitalWrite( MCU_LED, LED_ON );	 // Turn the LED on.
 
 		readTelemetry();
 		printTelemetry();
 		publishTelemetry();
-		publishStats();
 
 		Serial.printf( "publishCount: %lu\n", publishCount );
 

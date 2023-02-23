@@ -6,14 +6,14 @@
 // These headers are installed when the ESP8266 is installed in board manager.
 #include "ESP8266WiFi.h" // ESP8266 WiFi support.  https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi
 #include <ESP8266mDNS.h> // OTA - mDNSResponder (Multicast DNS) for the ESP8266 family.
-#define LED_ON	 0
-#define LED_OFF 1
+const unsigned int LED_ON = 0;
+const unsigned int LED_OFF = 1;
 #else
 // These headers are installed when the ESP32 is installed in board manager.
 #include "WiFi.h"		// ESP32 Wifi support.  https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFi.h
 #include <ESPmDNS.h> // OTA - Multicast DNS for the ESP32.
-#define LED_ON	 1
-#define LED_OFF 0
+const unsigned int LED_ON = 1;
+const unsigned int LED_OFF = 0;
 #endif
 
 #include <WiFiUdp.h>		// OTA
