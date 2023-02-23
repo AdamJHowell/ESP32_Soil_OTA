@@ -2,12 +2,8 @@
 *.iml
 privateInfo.*
 debug_custom.json
+debug.cfg
 *.svd
-
-.idea/
-*.iml
-privateInfo.*
-networkVariables.h
 cmake-build-*/
 
 # Prerequisites
