@@ -7,6 +7,7 @@ include_directories( . )
 
 add_executable( ESP32_Soil_OTA
 		ESP32_Soil_OTA.ino
-		privateInfo.h )
+		privateInfo.h
+		NetworkFunctions.ino ESP32_Soil_OTA.h NetworkFunctions.h )
 
 set_target_properties( ESP32_Soil_OTA PROPERTIES LINKER_LANGUAGE CXX )

@@ -21,143 +21,9 @@
  * 	every time the pump runs: soilMoisture and tempC
  * 	every publishInterval: all stats (soilMoisture, tempC, publishCount, etc.)
  */
-#ifdef ESP8266
-// These headers are installed when the ESP8266 is installed in board manager.
-#include "ESP8266WiFi.h" // ESP8266 WiFi support.  https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi
-#include <ESP8266mDNS.h> // OTA - mDNSResponder (Multicast DNS) for the ESP8266 family.
-#elif ESP32
-// These headers are installed when the ESP32 is installed in board manager.
-#include "WiFi.h"		// ESP32 Wifi support.  https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFi.h
-#include <ESPmDNS.h> // OTA - Multicast DNS for the ESP32.
-#else
-#include "WiFi.h" // Arduino Wi-Fi support.  This header is part of the standard library.  https://www.arduino.cc/en/Reference/WiFi
-#endif
-#include <Wire.h>				  // This header is part of the standard library.  https://www.arduino.cc/en/reference/wire
-#include <PubSubClient.h>	  // PubSub is the MQTT API.  Author: Nick O'Leary  https://github.com/knolleary/pubsubclient
-#include <ArduinoJson.h>	  // A JSON manipulation library.  Author: Benoît Blanchon  https://github.com/bblanchon/ArduinoJson  https://arduinojson.org/
-#include <WiFiUdp.h>			  // OTA
-#include <ArduinoOTA.h>		  // OTA - The Arduino OTA library.  Specific version of this are installed along with specific boards in board manager.
-#include <Adafruit_seesaw.h> // Used to read the soil sensor. https://github.com/adafruit/Adafruit_Seesaw - Requires https://github.com/adafruit/Adafruit_BusIO
-#include "privateInfo.h"	  // I use this file to hide my network information from random people browsing my GitHub repo.
-
-/**
- * The commented-out variables are stored in "privateInfo.h", which I do not upload to GitHub.
- * If you do not want to create that file, set them here instead.
- */
-//const char* wifiSsid = "your WiFi SSID";
-//const char* wifiPassword = "your Wi-Fi password";
-//const char* mqttBroker = "your broker address";
-//const int mqttPort = 1883;
-const char *hostName = "ESP32_Soil_OTA";											// The network hostname to set.
-const char *notes = "HiLetgo ESP32 with Adafruit I2C soil sensor";		// Notes about this program.
-const char *commandTopic = "backYard/plantWatering/command";				// The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
-const char *sketchTopic = "backYard/plantWatering/sketch";					// The topic used to publish the sketch name.
-const char *macTopic = "backYard/plantWatering/mac";							// The topic used to publish the MAC address.
-const char *ipTopic = "backYard/plantWatering/ip";								// The topic used to publish the IP address.
-const char *rssiTopic = "backYard/plantWatering/rssi";						// The topic used to publish the Wi-Fi Received Signal Strength Indicator.
-const char *publishCountTopic = "backYard/plantWatering/publishCount";	// The topic used to publish the loop count.
-const char *notesTopic = "backYard/plantWatering/notes";						// The topic used to publish notes relevant to this project.
-const char *tempCTopic = "backYard/plantWatering/soil/tempC";				// The topic used to publish the soil temperature in Celsius.
-const char *tempFTopic = "backYard/plantWatering/soil/tempF";				// The topic used to publish the soil temperature in Fahrenheit.
-const char *moistureTopic = "backYard/plantWatering/soil/moisture";		// The topic used to publish the soil moisture.
-const char *mqttStatsTopic = "backYardStats";									// The topic this device will publish to upon connection to the broker.
-const char *mqttTopic = "espWeather";												// The topic used to publish a single JSON message containing all data.
-const unsigned int LED_PIN = 2;														// Use this LED for notifications.
-const unsigned int sdaGPIO = 33;														// The GPIO to use for SDA.
-const unsigned int sclGPIO = 22;														// The GPIO to use for SCL.
-const unsigned int relayGPIO = 4;													// The GPIO which controls the relay.
-const int JSON_DOC_SIZE = 512;														// The ArduinoJson document size.
-unsigned int mqttReconnectDelay = 5000;											// How long to wait (in milliseconds) between MQTT connection attempts.
-unsigned long publishCount = 0;														// A count of how many publishes have taken place.
-unsigned long publishInterval = 60000;												// The delay in milliseconds between MQTT publishes.  This prevents "flooding" the broker.
-unsigned long sensorPollDelay = 10000;												// This is the delay between polls of the soil sensor.  This should be greater than 100 milliseconds.
-unsigned long pumpRunTime = 20000;													// Minimum time to run the pump.
-unsigned long pumpMinOffDelay = 20000;												// The time to wait after stopping, before the pump will start again.  This allows water to flow through the soil.
-unsigned long lastPublishTime = 0;													// This is used to determine the time since last MQTT publish.
-unsigned long lastMqttConnectionTime = 0;											// The last time a MQTT connection was attempted.
-unsigned int mqttReconnectCooldown = 20000;										// Set the minimum time between calls to mqttMultiConnect() to 20 seconds.
-unsigned long lastPollTime = 0;														// This is used to determine the time since last sensor poll.
-unsigned long bootTime = 0;															// The time since boot.  This value "rolls" at about 50 days.
-unsigned long pumpStartTime = 0;														// The most recent time that the pump started.
-unsigned long pumpStopTime = 0;														// The most recent time that the pump stopped.
-char ipAddress[16];																		// The IP address.
-char macAddress[18];																		// The MAC address to use as part of the MQTT client ID.
-bool pumpRunning = false;																// Flag to indicate when the pump is running or not.
-unsigned int invalidTemp = 0;															// Holds the current number of consecutive invalid temperature readings.
-unsigned int invalidMoisture = 0;													// Holds the current number of consecutive invalid humidity readings.
-float tempC;																				// A global to hold the temperature in Celsius.
-float tempF;																				// A global to hold the temperature in Fahrenheit.
-long rssi;																					// A global to hold the Received Signal Strength Indicator.
-uint16_t soilMoisture = 0;																// The soil moisture level (capacitance).
-uint16_t minMoisture = 500;															// The moisture level which triggers the pump.
 
 
-// Create class objects.
-WiFiClient espClient;
-PubSubClient mqttClient( espClient );
-Adafruit_seesaw soilSensor;
-
-
-/**
- * @brief onReceiveCallback() processes MQTT callbacks.
- * @param topic the topic that the message arrived on.
- * @param payload the message to process.
- * @param length the length of the payload in bytes.
- */
-void onReceiveCallback( char *topic, byte *payload, unsigned int length )
-{
-	Serial.printf( "\nMessage arrived on Topic: '%s'\n", topic );
-
-	StaticJsonDocument<JSON_DOC_SIZE> callbackJsonDoc;
-	deserializeJson( callbackJsonDoc, payload, length );
-
-	// The command can be: publishTelemetry, publishStatus, pumpOn, pumpOff, or changeTelemetryInterval.
-	const char *command = callbackJsonDoc["command"];
-	if( strcmp( command, "publishTelemetry" ) == 0 )
-	{
-		Serial.println( "Reading and publishing sensor values." );
-		// Poll the sensor.
-		readTelemetry();
-		// Publish the sensor readings.
-		publishTelemetry();
-		Serial.println( "Readings have been published." );
-	}
-	else if( strcmp( command, "publishStatus" ) == 0 )
-	{
-		Serial.println( "publishStatus is not yet implemented." );
-	}
-	else if( strcmp( command, "pumpOn" ) == 0 )
-	{
-		unsigned long currentTime = millis();
-		// Note the start time.
-		pumpStartTime = currentTime;
-		// Turn the relay (pump) on.  This relay board switches on when the pin is pulled low.
-		digitalWrite( relayGPIO, LOW );
-		Serial.println( "Turning the pump on." );
-	}
-	else if( strcmp( command, "pumpOff" ) == 0 )
-	{
-		unsigned long currentTime = millis();
-		// Note the stop time.
-		pumpStopTime = currentTime;
-		// Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
-		digitalWrite( relayGPIO, HIGH );
-		Serial.println( "Turning the pump off." );
-	}
-	else if( strcmp( command, "changeTelemetryInterval" ) == 0 )
-	{
-		Serial.println( "Changing the publish interval." );
-		unsigned long tempValue = callbackJsonDoc["value"];
-		// Only update the value if it is greater than 4 seconds.  This prevents a seconds vs. milliseconds confusion.
-		if( tempValue > 4000 )
-			publishInterval = tempValue;
-		Serial.print( "MQTT publish interval has been updated to " );
-		Serial.println( publishInterval );
-		lastPublishTime = 0;
-	}
-	else
-		Serial.printf( "Unknown command '%s'\n", command );
-} // End of onReceiveCallback() function.
+#include "ESP32_Soil_OTA.h"
 
 
 /**
@@ -188,7 +54,7 @@ void readTelemetry()
 		invalidMoisture = 0;
 	}
 	else
-			invalidMoisture++;
+		invalidMoisture++;
 
 	// If either invalid count is too high, reset the device.
 	if( invalidTemp > 4 || invalidMoisture > 4 )
@@ -204,148 +70,14 @@ void readTelemetry()
 
 
 /**
- * @brief wifiConnect() will attempt to connect to the defined Wi-Fi network up to maxAttempts times.
- */
-void wifiConnect( int maxAttempts )
-{
-	// Announce Wi-Fi parameters.
-	Serial.print( "WiFi connecting to SSID: " );
-	Serial.println( wifiSsid );
-	WiFi.config( INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE );
-	//WiFi.setHostname( hostName );
-
-
-	// Connect to the Wi-Fi network.
-	Serial.printf( "Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode( WIFI_STA ) ? "" : " - Failed!" );
-	WiFi.begin( wifiSsid, wifiPassword );
-
-	int i = 1;
-	/*
-     WiFi.status() return values:
-     0 : WL_IDLE_STATUS when Wi-Fi is in process of changing between statuses
-     1 : WL_NO_SSID_AVAIL in case configured SSID cannot be reached
-     3 : WL_CONNECTED after successful connection is established
-     4 : WL_CONNECT_FAILED if wifiPassword is incorrect
-     6 : WL_DISCONNECTED if module is not configured in station mode
-  */
-	// Loop until Wi-Fi has connected.
-	while( WiFi.status() != WL_CONNECTED && i < maxAttempts )
-	{
-		digitalWrite( LED_PIN, 1 ); // Turn the LED off.
-		delay( 1000 );
-		Serial.println( "Waiting for a connection..." );
-		Serial.print( "WiFi status: " );
-		Serial.println( WiFi.status() );
-		Serial.print( i++ );
-		Serial.println( " seconds" );
-	}
-
-	if( WiFi.status() == WL_CONNECTED )
-	{
-		WiFi.setAutoReconnect( true );
-		WiFi.persistent( true );
-
-		// Print that Wi-Fi has connected.
-		Serial.println( '\n' );
-		Serial.println( "WiFi connection established!" );
-		Serial.print( "MAC address: " );
-		Serial.println( macAddress );
-		Serial.print( "IP address: " );
-		snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
-		Serial.println( ipAddress );
-
-		digitalWrite( LED_PIN, 0 ); // Turn the Wi-Fi LED on.
-	}
-} // End of wifiConnect() function.
-
-
-/**
- * @brief mqttConnect() will attempt to (re)connect the MQTT client.
- */
-bool mqttConnect( int maxAttempts )
-{
-	// Reconnect to Wi-Fi if necessary.
-	if( WiFi.status() != WL_CONNECTED )
-		wifiConnect( 2 );
-
-	if( WiFi.status() == WL_CONNECTED )
-	{
-		unsigned long time = millis();
-		if( lastMqttConnectionTime == 0 || ( ( time > mqttReconnectCooldown ) && ( time - mqttReconnectCooldown ) > lastMqttConnectionTime ) )
-		{
-			digitalWrite( LED_PIN, 1 ); // Turn the LED off.
-			Serial.print( "Attempting to connect to the MQTT broker up to " );
-			Serial.print( maxAttempts );
-			Serial.println( " times." );
-
-			int i = 0;
-			// Loop until MQTT has connected.
-			while( !mqttClient.connected() && i < maxAttempts )
-			{
-				Serial.print( "Attempt # " );
-				Serial.print( i + 1 );
-				Serial.print( "..." );
-
-				char clientId[22];
-				// Put the macAddress and a random number into clientId.  The random number suffix prevents brokers from rejecting a clientID as already in use.
-				snprintf( clientId, 22, "%s-%03d", macAddress, random( 999 ) );
-				Serial.print( "Connecting with client ID '" );
-				Serial.print( clientId );
-				Serial.print( "' " );
-
-				// Connect to the broker using the pseudo-random clientId.
-				if( mqttClient.connect( clientId ) )
-				{
-					Serial.println( " connected!" );
-					digitalWrite( LED_PIN, 0 ); // Turn the LED on.
-				}
-				else
-				{
-					Serial.print( " failed!  Return code: " );
-					Serial.print( mqttClient.state() );
-					Serial.print( ".  Trying again in " );
-					Serial.print( mqttReconnectDelay / 1000 );
-					Serial.println( " seconds." );
-					digitalWrite( LED_PIN, 0 ); // Turn the LED on.
-					delay( mqttReconnectDelay / 2 );
-					digitalWrite( LED_PIN, 1 ); // Turn the LED off.
-					delay( mqttReconnectDelay / 2 );
-				}
-				i++;
-			}
-			if( mqttClient.connected() )
-			{
-				// Subscribe to backYard/plantWatering/command, which will respond to publishTelemetry and publishStatus
-				mqttClient.subscribe( commandTopic );
-				mqttClient.setBufferSize( JSON_DOC_SIZE );
-				char connectString[JSON_DOC_SIZE];
-				snprintf( connectString, JSON_DOC_SIZE, "{\n\t\"sketch\": \"%s\",\n\t\"mac\": \"%s\",\n\t\"ip\": \"%s\"\n}", __FILE__, macAddress, ipAddress );
-				mqttClient.publish( "espConnect", connectString, false );
-				digitalWrite( LED_PIN, 0 ); // Turn the LED on.
-			}
-			else
-			{
-				Serial.println( "Unable to connect to the MQTT broker!" );
-				return false;
-			}
-
-			Serial.println( "Function mqttConnect() has completed." );
-			lastMqttConnectionTime = millis();
-			return true;
-		}
-	}
-} // End of mqttConnect() function.
-
-
-/**
  * @brief setup() will initialize the device and connected components.
  */
 void setup()
 {
-	delay( 1000 );						// A pause to give me time to open the serial monitor.
-	pinMode( LED_PIN, OUTPUT );	// Initialize the GPIO which controls the LED as an output.
-	digitalWrite( LED_PIN, 0 );	// Turn the LED on.
-	Wire.begin();						// Initialize I2C communication.
+	delay( 1000 );					 // A pause to give me time to open the serial monitor.
+	pinMode( MCU_LED, OUTPUT ); // Initialize the GPIO which controls the LED as an output.
+	digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
+	Wire.begin();					 // Initialize I2C communication.
 
 	Serial.begin( 115200 );
 	if( !Serial )
@@ -357,14 +89,10 @@ void setup()
 	Serial.println( __FILE__ );
 
 	pinMode( relayGPIO, OUTPUT );	  // Set the replay (pump) GPIO as an output.
-	digitalWrite( relayGPIO, LOW ); // Turn the relay (pump) off.
+	digitalWrite( relayGPIO, LED_OFF ); // Turn the relay (pump) off.
 
 	// Set the ipAddress char array to a default value.
 	snprintf( ipAddress, 16, "127.0.0.1" );
-
-	// Set the MQTT client parameters.
-	mqttClient.setServer( mqttBroker, mqttPort );
-	mqttClient.setCallback( onReceiveCallback ); // Assign the onReceiveCallback() function to handle MQTT callbacks.
 
 	Serial.println( "Attempting to connect to the soil sensor..." );
 	if( !soilSensor.begin( 0x36 ) )
@@ -380,8 +108,7 @@ void setup()
 	Serial.print( "MAC address: " );
 	Serial.println( macAddress );
 
-	wifiConnect( 5 );
-
+	wifiMultiConnect();
 	configureOTA();
 
 	snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
@@ -389,67 +116,6 @@ void setup()
 
 	printUptime();
 } // End of setup() function.
-
-
-/**
- * @brief configureOTA() will configure and initiate Over The Air (OTA) updates for this device.
- */
-void configureOTA()
-{
-	Serial.println( "Configuring OTA." );
-
-#ifdef ESP8266
-	// The ESP8266 port defaults to 8266
-	// ArduinoOTA.setPort( 8266 );
-	// The ESP8266 hostname defaults to esp8266-[ChipID]
-	ArduinoOTA.setHostname( hostName );
-	// Authentication is disabled by default.
-	// ArduinoOTA.setPassword( ( const char * )"admin" );
-#elif ESP32
-	// The ESP32 port defaults to 3232
-	// ArduinoOTA.setPort( 3232 );
-	// The ESP32 hostname defaults to esp32-[MAC]
-	ArduinoOTA.setHostname( hostName );
-	// Authentication is disabled by default.
-	// ArduinoOTA.setPassword( "admin" );
-	// Password can be set with it's md5 value as well
-	// MD5( admin ) = 21232f297a57a5a743894a0e4a801fc3
-	// ArduinoOTA.setPasswordHash( "21232f297a57a5a743894a0e4a801fc3" );
-#else
-	// ToDo: Verify how stock Arduino code is meant to handle the port, username, and password.
-	ArduinoOTA.setHostname( hostName );
-#endif
-
-	Serial.printf( "Using hostname '%s'\n", hostName );
-
-	String type = "filesystem";	// SPIFFS
-	if( ArduinoOTA.getCommand() == U_FLASH )
-		type = "sketch";
-
-	// Configure the OTA callbacks.
-	ArduinoOTA.onStart( []()
-	{
-		String type = "flash";	// U_FLASH
-		if( ArduinoOTA.getCommand() == U_SPIFFS )
-			type = "filesystem";
-		// NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-		Serial.printf( "OTA is updating the %s\n", type );
-	} );
-	ArduinoOTA.onEnd( []() { Serial.println( "\nTerminating OTA communication." ); } );
-	ArduinoOTA.onProgress( []( unsigned int progress, unsigned int total ){ Serial.printf( "OTA progress: %u%%\r", ( progress / ( total / 100 ) ) ); } );
-	ArduinoOTA.onError( []( ota_error_t error ){
-		Serial.printf( "Error[%u]: ", error );
-		if( error == OTA_AUTH_ERROR ) Serial.println( "OTA authentication failed!" );
-		else if( error == OTA_BEGIN_ERROR ) Serial.println( "OTA transmission failed to initiate properly!" );
-		else if( error == OTA_CONNECT_ERROR ) Serial.println( "OTA connection failed!" );
-		else if( error == OTA_RECEIVE_ERROR ) Serial.println( "OTA client was unable to properly receive data!" );
-		else if( error == OTA_END_ERROR ) Serial.println( "OTA transmission failed to terminate properly!" ); } );
-
-	// Start listening for OTA commands.
-	ArduinoOTA.begin();
-
-	Serial.println( "OTA is configured and ready." );
-} // End of the configureOTA() function.
 
 
 /**
@@ -484,12 +150,34 @@ void printUptime()
  */
 void printTelemetry()
 {
-	Serial.printf( "WiFi SSID: %s\n", wifiSsid );
-	Serial.printf( "Broker: %s:%d\n", mqttBroker, mqttPort );
+	Serial.println();
+	Serial.println( __FILE__ );
+	Serial.println();
+
+	Serial.println( "Network stats:" );
+	Serial.printf( "  MAC address: %s\n", macAddress );
+	int wifiStatusCode = WiFi.status();
+	char buffer[29];
+	lookupWifiCode( wifiStatusCode, buffer );
+	if( wifiStatusCode == 3 )
+	{
+		Serial.printf( "  IP address: %s\n", ipAddress );
+		Serial.printf( "  RSSI: %ld\n", rssi );
+		Serial.print( "~~IP address: " );
+		Serial.println( WiFi.localIP() );
+	}
+	Serial.printf( "  wifiConnectCount: %u\n", wifiConnectCount );
+	Serial.printf( "  wifiCoolDownInterval: %lu\n", wifiCoolDownInterval );
+	Serial.printf( "  Wi-Fi status text: %s\n", buffer );
+	Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
+	Serial.println();
+
+	Serial.printf( "Broker: %s:%d\n", mqttClient.getServerDomain(), mqttClient.getServerPort() );
 	Serial.printf( "Temperature: %.2f C\n", tempC );
 	Serial.printf( "Temperature: %.2f F\n", tempF );
 	Serial.printf( "Moisture: %.2f %%\n", soilMoisture );
 	Serial.printf( "WiFi RSSI: %ld\n", rssi );
+	printUptime();
 } // End of printTelemetry() function.
 
 
@@ -578,7 +266,7 @@ void publishStats()
 	if( mqttClient.connected() )
 	{
 		if( mqttClient.connected() && mqttClient.publish( mqttStatsTopic, mqttStatsString ) )
-			Serial.printf( "Published to this broker and port: %s:%d, and to this topic '%s':\n%s\n", mqttBroker, mqttPort, mqttStatsTopic, mqttStatsString );
+			Serial.printf( "Published to this broker and port: %s:%d, and to this topic '%s':\n%s\n", mqttClient.getServerDomain(), mqttClient.getServerPort(), mqttStatsTopic, mqttStatsString );
 		else
 			Serial.println( "\n\nPublish failed!\n\n" );
 	}
@@ -612,7 +300,7 @@ void runPump()
 			// Note the start time.
 			pumpStartTime = currentTime;
 			// Turn the relay (pump) on.  This relay board switches on when the pin is pulled to ground.
-			digitalWrite( relayGPIO, LOW );
+			digitalWrite( relayGPIO, LED_OFF );
 			// Flag that the pump is now running.
 			pumpRunning = true;
 		}
@@ -628,7 +316,7 @@ void runPump()
 			// Note the start time.
 			pumpStopTime = currentTime;
 			// Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
-			digitalWrite( relayGPIO, HIGH );
+			digitalWrite( relayGPIO, LED_ON );
 			// Flag that the pump has stopped.
 			pumpRunning = false;
 		}
@@ -640,7 +328,7 @@ void loop()
 {
 	// Reconnect to Wi-Fi and the MQTT broker as needed.
 	if( !mqttClient.connected() )
-		mqttConnect( 2 );
+		mqttMultiConnect( 2 );
 	// The loop() function facilitates the receiving of messages and maintains the connection to the broker.
 	mqttClient.loop();
 
@@ -650,6 +338,7 @@ void loop()
 	runPump();
 
 	unsigned long time = millis();
+	// Poll the first time.  Avoid subtraction overflow.  Poll every interval.
 	if( lastPollTime == 0 || ( ( time > sensorPollDelay ) && ( time - sensorPollDelay ) > lastPollTime ) )
 	{
 		readTelemetry();
@@ -668,12 +357,11 @@ void loop()
 	{
 		publishCount++;
 		// These next 3 lines act as a "heartbeat", to give local users a visual indication that the system is working.
-		digitalWrite( LED_PIN, 0 ); // Turn the LED off, to alert the user that a publish is about to take place.
+		digitalWrite( MCU_LED, LED_OFF ); // Turn the LED off, to alert the user that a publish is about to take place.
 		delay( 1000 );					 // Wait for one second.
-		digitalWrite( LED_PIN, 1 ); // Turn the LED on.
+		digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
 
 		readTelemetry();
-		printUptime();
 		printTelemetry();
 		publishTelemetry();
 		publishStats();
