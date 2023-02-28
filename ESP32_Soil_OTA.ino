@@ -37,17 +37,21 @@ void readTelemetry()
 	rssi = WiFi.RSSI();
 
 	float temporarySoilTempC = soilSensor.getTemp();
-	uint16_t temporarySoilMoisture = soilSensor.touchRead( 0 );
+	unsigned int temporarySoilMoisture = soilSensor.touchRead( 0 );
 
 	// Define the valid temperature range (in Celsius) for this sensor.
 	if( temporarySoilTempC > -20 && temporarySoilTempC < 100 )
 	{
 		tempC = temporarySoilTempC;
-		tempF = ( tempC * 9 / 5 ) + 32;
+		tempF = ( tempC * 1.8 ) + 32;
 		invalidTemp = 0;
 	}
 	else
+	{
 		invalidTemp++;
+		Serial.printf( "\n\n~~~  Invalid temperature reading of %.2f  ~~~\n", temporarySoilTempC );
+		Serial.printf( "~~~  Acceptable range is %.2f to %.2f  ~~~\n\n", -20.0, 100.0 );
+	}
 
 	// Define the valid moisture range for this sensor.
 	if( temporarySoilMoisture > 200 && temporarySoilMoisture < 2000 )
@@ -56,7 +60,11 @@ void readTelemetry()
 		invalidMoisture = 0;
 	}
 	else
+	{
 		invalidMoisture++;
+		Serial.printf( "\n\n~~~  Invalid moisture reading of %u  ~~~\n", temporarySoilMoisture );
+		Serial.printf( "~~~  Acceptable range is %u to %u  ~~~\n\n", 200, 2000 );
+	}
 
 	// If either invalid count is too high, reset the device.
 	if( invalidTemp > 10 || invalidMoisture > 10 )
@@ -65,6 +73,7 @@ void readTelemetry()
 		Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
 		Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
 		mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
+		delay( 7000 );
 		Serial.println( "Resetting the device!\n\n\n" );
 		ESP.restart();
 	}
@@ -188,7 +197,8 @@ void printTelemetry()
 	Serial.println( "Environmental stats:" );
 	Serial.printf( "  Temperature: %.2f C\n", tempC );
 	Serial.printf( "  Temperature: %.2f F\n", tempF );
-	Serial.printf( "  Moisture: %.2f %%\n", soilMoisture );
+	Serial.printf( "  Moisture: %.2f\n", soilMoisture );
+	Serial.printf( "  Moisture threshold: %.2f\n", minMoisture );
 	Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
 	Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
 	Serial.println();
@@ -228,6 +238,9 @@ void publishTelemetry()
 	dtostrf( ( soilMoisture ), 1, 3, buffer );
 	if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
 		Serial.printf( "  %s\n", MOISTURE_TOPIC );
+	dtostrf( ( minMoisture ), 1, 3, buffer );
+	if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
+		Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
 
 	lastPublishTime = millis();
 } // End of publishTelemetry() function.
@@ -256,6 +269,7 @@ void runPump()
 		// If enough time has passed since the pump was shut off (so to give time for water to flow to the sensor).
 		if( currentTime - pumpStopTime > pumpMinOffDelay )
 		{
+			Serial.printf( "Moisture level %.2f is below threshold %.2f\n", soilMoisture, minMoisture );
 			Serial.println( "Starting the pump." );
 			// Note the start time.
 			pumpStartTime = currentTime;
@@ -316,8 +330,6 @@ void loop()
 		delay( 1000 );							 // Wait for one second.
 		digitalWrite( MCU_LED, LED_ON );	 // Turn the LED on.
 
-		readTelemetry();
-		printTelemetry();
 		publishTelemetry();
 
 		Serial.printf( "publishCount: %lu\n", publishCount );
