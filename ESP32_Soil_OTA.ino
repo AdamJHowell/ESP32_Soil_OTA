@@ -73,7 +73,7 @@ void readTelemetry()
 		Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
 		Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
 		mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
-		delay( 7000 );
+		delay( 15000 );
 		Serial.println( "Resetting the device!\n\n\n" );
 		ESP.restart();
 	}
@@ -191,14 +191,14 @@ void printTelemetry()
 	lookupMQTTCode( mqttClient.state(), buffer );
 	Serial.printf( "  MQTT state: %s\n", buffer );
 	Serial.printf( "  Publish count: %lu\n", publishCount );
-	Serial.printf( "  Callback count: %lu\n", callbackCount );
+	Serial.printf( "  Callback count: %u\n", callbackCount );
 	Serial.println();
 
 	Serial.println( "Environmental stats:" );
 	Serial.printf( "  Temperature: %.2f C\n", tempC );
 	Serial.printf( "  Temperature: %.2f F\n", tempF );
-	Serial.printf( "  Moisture: %.2f\n", soilMoisture );
-	Serial.printf( "  Moisture threshold: %.2f\n", minMoisture );
+	Serial.printf( "  Moisture: %u\n", soilMoisture );
+	Serial.printf( "  Moisture threshold: %u\n", minMoisture );
 	Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
 	Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
 	Serial.println();

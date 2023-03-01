@@ -280,6 +280,7 @@ void wifiMultiConnect()
  */
 bool mqttMultiConnect( int maxAttempts )
 {
+	callbackCount++;
 	Serial.println( "\nFunction mqttMultiConnect() has initiated." );
 	if( WiFi.status() != WL_CONNECTED )
 		wifiMultiConnect();
