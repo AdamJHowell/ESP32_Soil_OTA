@@ -7,7 +7,7 @@
  *    <location>/<device>/<device reading>
  *    <location>/<device>/<sensor type>/<sensor reading>
  *
- * @copyright   Copyright © 2022 Adam Howell
+ * @copyright   Copyright © 2023 Adam Howell
  * @license     The MIT License (MIT)
  *
  * Pseudocode:
