@@ -9,6 +9,12 @@
 #include "privateInfo.h"     // I use this file to hide my network information from random people browsing my GitHub repo.
 #include "NetworkFunctions.h"
 
+#define LOCATION "backYard"
+#define DEVICE "plantWatering"
+
+#define MQTT_TOPIC LOCATION "/" DEVICE "/"
+#define COMMAND_TOPIC MQTT_TOPIC "command"
+
 /**
  * The commented-out variables are stored in "privateInfo.h", which I do not upload to GitHub.
  * If you do not want to create that file, set them here instead.
@@ -19,7 +25,7 @@
 //const int mqttPort = 1883;
 const char *HOSTNAME = "ESP32_Soil_OTA";                                           // The network hostname to set.
 const char *NOTES = "HiLetgo ESP32 with Adafruit I2C soil sensor";                 // Notes about this program.
-const char *COMMAND_TOPIC = "backYard/plantWatering/command";                      // The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
+//const char *COMMAND_TOPIC = "backYard/plantWatering/command";                      // The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
 const char *SKETCH_TOPIC = "backYard/plantWatering/sketch";                        // The topic used to publish the sketch name.
 const char *MAC_TOPIC = "backYard/plantWatering/mac";                              // The topic used to publish the MAC address.
 const char *IP_TOPIC = "backYard/plantWatering/ip";                                // The topic used to publish the IP address.
