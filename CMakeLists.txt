@@ -3,7 +3,10 @@ project( ESP32_Soil_OTA )
 
 set( CMAKE_CXX_STANDARD 14 )
 
-include_directories( . )
+include_directories( .
+		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.14/libraries/ESPmDNS/src/"
+		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.14/libraries/WiFi/src"
+)
 
 add_executable( ESP32_Soil_OTA
 		ESP32_Soil_OTA.ino

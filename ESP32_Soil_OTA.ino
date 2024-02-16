@@ -278,7 +278,7 @@ void runPump()
          // Flag that the pump is now running.
          pumpRunning = true;
       }
-   }
+    }
 
    // If the pump is currently running.
    if( pumpRunning )
