@@ -34,49 +34,49 @@
  */
 void readTelemetry()
 {
-	rssi = WiFi.RSSI();
+   rssi = WiFi.RSSI();
 
-	float temporarySoilTempC = soilSensor.getTemp();
-	unsigned int temporarySoilMoisture = soilSensor.touchRead( 0 );
+   float temporarySoilTempC = soilSensor.getTemp();
+   unsigned int temporarySoilMoisture = soilSensor.touchRead( 0 );
 
-	// Define the valid temperature range (in Celsius) for this sensor.
-	if( temporarySoilTempC > -20 && temporarySoilTempC < 100 )
-	{
-		tempC = temporarySoilTempC;
-		tempF = ( tempC * 1.8 ) + 32;
-		invalidTemp = 0;
-	}
-	else
-	{
-		invalidTemp++;
-		Serial.printf( "\n\n~~~  Invalid temperature reading of %.2f  ~~~\n", temporarySoilTempC );
-		Serial.printf( "~~~  Acceptable range is %.2f to %.2f  ~~~\n\n", -20.0, 100.0 );
-	}
+   // Define the valid temperature range (in Celsius) for this sensor.
+   if( temporarySoilTempC > -20 && temporarySoilTempC < 100 )
+   {
+      tempC = temporarySoilTempC;
+      tempF = ( tempC * 1.8 ) + 32;
+      invalidTemp = 0;
+   }
+   else
+   {
+      invalidTemp++;
+      Serial.printf( "\n\n~~~  Invalid temperature reading of %.2f  ~~~\n", temporarySoilTempC );
+      Serial.printf( "~~~  Acceptable range is %.2f to %.2f  ~~~\n\n", -20.0, 100.0 );
+   }
 
-	// Define the valid moisture range for this sensor.
-	if( temporarySoilMoisture > 200 && temporarySoilMoisture < 2000 )
-	{
-		soilMoisture = temporarySoilMoisture;
-		invalidMoisture = 0;
-	}
-	else
-	{
-		invalidMoisture++;
-		Serial.printf( "\n\n~~~  Invalid moisture reading of %u  ~~~\n", temporarySoilMoisture );
-		Serial.printf( "~~~  Acceptable range is %u to %u  ~~~\n\n", 200, 2000 );
-	}
+   // Define the valid moisture range for this sensor.
+   if( temporarySoilMoisture > 200 && temporarySoilMoisture < 2000 )
+   {
+      soilMoisture = temporarySoilMoisture;
+      invalidMoisture = 0;
+   }
+   else
+   {
+      invalidMoisture++;
+      Serial.printf( "\n\n~~~  Invalid moisture reading of %u  ~~~\n", temporarySoilMoisture );
+      Serial.printf( "~~~  Acceptable range is %u to %u  ~~~\n\n", 200, 2000 );
+   }
 
-	// If either invalid count is too high, reset the device.
-	if( invalidTemp > 10 || invalidMoisture > 10 )
-	{
-		Serial.println( "\n\n\n\n" );
-		Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
-		Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
-		mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
-		delay( 15000 );
-		Serial.println( "Resetting the device!\n\n\n" );
-		ESP.restart();
-	}
+   // If either invalid count is too high, reset the device.
+   if( invalidTemp > 10 || invalidMoisture > 10 )
+   {
+      Serial.println( "\n\n\n\n" );
+      Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
+      Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
+      mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
+      delay( 15000 );
+      Serial.println( "Resetting the device!\n\n\n" );
+      ESP.restart();
+   }
 } // End of readTelemetry() function.
 
 
@@ -85,48 +85,48 @@ void readTelemetry()
  */
 void setup()
 {
-	delay( 1000 );							// A pause to give me time to open the serial monitor.
-	pinMode( MCU_LED, OUTPUT );		// Initialize the GPIO which controls the LED as an output.
-	digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
-	Wire.begin();							// Initialize I2C communication.
+   delay( 1000 );							// A pause to give me time to open the serial monitor.
+   pinMode( MCU_LED, OUTPUT );		// Initialize the GPIO which controls the LED as an output.
+   digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
+   Wire.begin();							// Initialize I2C communication.
 
-	Serial.begin( 115200 );
-	if( !Serial )
-		delay( 1000 );
+   Serial.begin( 115200 );
+   if( !Serial )
+      delay( 1000 );
 
-	Serial.println( '\n' );
-	Serial.println( "The setup() function is beginning." );
-	Serial.println( __FILE__ );
+   Serial.println( '\n' );
+   Serial.println( "The setup() function is beginning." );
+   Serial.println( __FILE__ );
 
-	pinMode( RELAY_GPIO, OUTPUT );			 // Set the replay (pump) GPIO as an output.
-	digitalWrite( RELAY_GPIO, PUMP_OFF ); // Turn the relay (pump) off.
+   pinMode( RELAY_GPIO, OUTPUT );			 // Set the replay (pump) GPIO as an output.
+   digitalWrite( RELAY_GPIO, PUMP_OFF ); // Turn the relay (pump) off.
 
-	// Set the ipAddress char array to a default value.
-	snprintf( ipAddress, 16, "127.0.0.1" );
+   // Set the ipAddress char array to a default value.
+   snprintf( ipAddress, 16, "127.0.0.1" );
 
-	Serial.println( "Attempting to connect to the soil sensor..." );
-	if( !soilSensor.begin( 0x36 ) )
-		Serial.println( "\n\nERROR: soil sensor not found!\n\n" );
-	else
-	{
-		Serial.print( "Seesaw started! version: " );
-		Serial.println( soilSensor.getVersion(), HEX );
-	}
+   Serial.println( "Attempting to connect to the soil sensor..." );
+   if( !soilSensor.begin( 0x36 ) )
+      Serial.println( "\n\nERROR: soil sensor not found!\n\n" );
+   else
+   {
+      Serial.print( "Seesaw started! version: " );
+      Serial.println( soilSensor.getVersion(), HEX );
+   }
 
-	// Set the MAC address variable to its value.
-	snprintf( macAddress, 18, "%s", WiFi.macAddress().c_str() );
-	Serial.print( "MAC address: " );
-	Serial.println( macAddress );
+   // Set the MAC address variable to its value.
+   snprintf( macAddress, 18, "%s", WiFi.macAddress().c_str() );
+   Serial.print( "MAC address: " );
+   Serial.println( macAddress );
 
-	wifiMultiConnect();
-	configureOTA();
+   wifiMultiConnect();
+   configureOTA();
 
-	snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
-	Serial.printf( "IP address: %s\n", ipAddress );
+   snprintf( ipAddress, 16, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
+   Serial.printf( "IP address: %s\n", ipAddress );
 
-	printUptime();
+   printUptime();
 
-	Serial.println( "The setup() function has completed." );
+   Serial.println( "The setup() function has completed." );
 } // End of setup() function.
 
 
@@ -135,25 +135,25 @@ void setup()
  */
 void printUptime()
 {
-	Serial.print( "Uptime in " );
-	long seconds = ( millis() - bootTime ) / 1000;
-	long minutes = seconds / 60;
-	long hours = minutes / 60;
-	if( seconds < 601 )
-	{
-		Serial.print( "seconds: " );
-		Serial.println( seconds );
-	}
-	else if( minutes < 121 )
-	{
-		Serial.print( "minutes: " );
-		Serial.println( minutes );
-	}
-	else
-	{
-		Serial.print( "hours: " );
-		Serial.println( hours );
-	}
+   Serial.print( "Uptime in " );
+   long seconds = ( millis() - bootTime ) / 1000;
+   long minutes = seconds / 60;
+   long hours = minutes / 60;
+   if( seconds < 601 )
+   {
+      Serial.print( "seconds: " );
+      Serial.println( seconds );
+   }
+   else if( minutes < 121 )
+   {
+      Serial.print( "minutes: " );
+      Serial.println( minutes );
+   }
+   else
+   {
+      Serial.print( "hours: " );
+      Serial.println( hours );
+   }
 } // End of printUptime() function.
 
 
@@ -162,48 +162,48 @@ void printUptime()
  */
 void printTelemetry()
 {
-	Serial.println();
-	Serial.println( __FILE__ );
-	Serial.println();
+   Serial.println();
+   Serial.println( __FILE__ );
+   Serial.println();
 
-	Serial.println( "Network stats:" );
-	Serial.printf( "  MAC address: %s\n", macAddress );
-	int wifiStatusCode = WiFi.status();
-	char buffer[29];
-	lookupWifiCode( wifiStatusCode, buffer );
-	if( wifiStatusCode == 3 )
-	{
-		Serial.printf( "  IP address: %s\n", ipAddress );
-		Serial.printf( "  RSSI: %ld\n", rssi );
-		Serial.print( "~~IP address: " );
-		Serial.println( WiFi.localIP() );
-	}
-	Serial.printf( "  wifiConnectCount: %u\n", wifiConnectCount );
-	Serial.printf( "  wifiCoolDownInterval: %lu\n", wifiCoolDownInterval );
-	Serial.printf( "  Wi-Fi status text: %s\n", buffer );
-	Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
-	Serial.println();
+   Serial.println( "Network stats:" );
+   Serial.printf( "  MAC address: %s\n", macAddress );
+   int wifiStatusCode = WiFi.status();
+   char buffer[29];
+   lookupWifiCode( wifiStatusCode, buffer );
+   if( wifiStatusCode == 3 )
+   {
+      Serial.printf( "  IP address: %s\n", ipAddress );
+      Serial.printf( "  RSSI: %ld\n", rssi );
+      Serial.print( "~~IP address: " );
+      Serial.println( WiFi.localIP() );
+   }
+   Serial.printf( "  wifiConnectCount: %u\n", wifiConnectCount );
+   Serial.printf( "  wifiCoolDownInterval: %lu\n", wifiCoolDownInterval );
+   Serial.printf( "  Wi-Fi status text: %s\n", buffer );
+   Serial.printf( "  Wi-Fi status code: %d\n", wifiStatusCode );
+   Serial.println();
 
-	Serial.println( "MQTT stats:" );
-	Serial.printf( "  mqttConnectCount: %u\n", mqttConnectCount );
-	Serial.printf( "  mqttCoolDownInterval: %lu\n", mqttCoolDownInterval );
-	Serial.printf( "  Broker: %s:%d\n", mqttClient.getServerDomain(), mqttClient.getServerPort() );
-	lookupMQTTCode( mqttClient.state(), buffer );
-	Serial.printf( "  MQTT state: %s\n", buffer );
-	Serial.printf( "  Publish count: %lu\n", publishCount );
-	Serial.printf( "  Callback count: %u\n", callbackCount );
-	Serial.println();
+   Serial.println( "MQTT stats:" );
+   Serial.printf( "  mqttConnectCount: %u\n", mqttConnectCount );
+   Serial.printf( "  mqttCoolDownInterval: %lu\n", mqttCoolDownInterval );
+   Serial.printf( "  Broker: %s:%d\n", mqttClient.getServerDomain(), mqttClient.getServerPort() );
+   lookupMQTTCode( mqttClient.state(), buffer );
+   Serial.printf( "  MQTT state: %s\n", buffer );
+   Serial.printf( "  Publish count: %lu\n", publishCount );
+   Serial.printf( "  Callback count: %u\n", callbackCount );
+   Serial.println();
 
-	Serial.println( "Environmental stats:" );
-	Serial.printf( "  Temperature: %.2f C\n", tempC );
-	Serial.printf( "  Temperature: %.2f F\n", tempF );
-	Serial.printf( "  Moisture: %u\n", soilMoisture );
-	Serial.printf( "  Moisture threshold: %u\n", minMoisture );
-	Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
-	Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
-	Serial.println();
+   Serial.println( "Environmental stats:" );
+   Serial.printf( "  Temperature: %.2f C\n", tempC );
+   Serial.printf( "  Temperature: %.2f F\n", tempF );
+   Serial.printf( "  Moisture: %u\n", soilMoisture );
+   Serial.printf( "  Moisture threshold: %u\n", minMoisture );
+   Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
+   Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
+   Serial.println();
 
-	printUptime();
+   printUptime();
 } // End of printTelemetry() function.
 
 
@@ -212,37 +212,37 @@ void printTelemetry()
  */
 void publishTelemetry()
 {
-	Serial.println( "Successfully published to:" );
-	char buffer[20];
-	// New format: <location>/<device>/<sensor>/<value>
-	if( mqttClient.publish( SKETCH_TOPIC, __FILE__, false ) )
-		Serial.printf( "  %s\n", SKETCH_TOPIC );
-	if( mqttClient.publish( MAC_TOPIC, macAddress, false ) )
-		Serial.printf( "  %s\n", MAC_TOPIC );
-	if( mqttClient.publish( IP_TOPIC, ipAddress, false ) )
-		Serial.printf( "  %s\n", IP_TOPIC );
-	ltoa( rssi, buffer, 10 );
-	if( mqttClient.publish( RSSI_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", RSSI_TOPIC );
-	ltoa( publishCount, buffer, 10 );
-	if( mqttClient.publish( PUBLISH_COUNT_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", PUBLISH_COUNT_TOPIC );
-	if( mqttClient.publish( NOTES_TOPIC, NOTES, false ) )
-		Serial.printf( "  %s\n", NOTES_TOPIC );
-	dtostrf( tempC, 1, 3, buffer );
-	if( mqttClient.publish( TEMP_C_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", TEMP_C_TOPIC );
-	dtostrf( ( tempF ), 1, 3, buffer );
-	if( mqttClient.publish( TEMP_F_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", TEMP_F_TOPIC );
-	dtostrf( ( soilMoisture ), 1, 3, buffer );
-	if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", MOISTURE_TOPIC );
-	dtostrf( ( minMoisture ), 1, 3, buffer );
-	if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
-		Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
+   Serial.println( "Successfully published to:" );
+   char buffer[20];
+   // New format: <location>/<device>/<sensor>/<value>
+   if( mqttClient.publish( SKETCH_TOPIC, __FILE__, false ) )
+      Serial.printf( "  %s\n", SKETCH_TOPIC );
+   if( mqttClient.publish( MAC_TOPIC, macAddress, false ) )
+      Serial.printf( "  %s\n", MAC_TOPIC );
+   if( mqttClient.publish( IP_TOPIC, ipAddress, false ) )
+      Serial.printf( "  %s\n", IP_TOPIC );
+   ltoa( rssi, buffer, 10 );
+   if( mqttClient.publish( RSSI_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", RSSI_TOPIC );
+   ltoa( publishCount, buffer, 10 );
+   if( mqttClient.publish( PUBLISH_COUNT_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", PUBLISH_COUNT_TOPIC );
+   if( mqttClient.publish( NOTES_TOPIC, NOTES, false ) )
+      Serial.printf( "  %s\n", NOTES_TOPIC );
+   dtostrf( tempC, 1, 3, buffer );
+   if( mqttClient.publish( TEMP_C_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", TEMP_C_TOPIC );
+   dtostrf( ( tempF ), 1, 3, buffer );
+   if( mqttClient.publish( TEMP_F_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", TEMP_F_TOPIC );
+   dtostrf( ( soilMoisture ), 1, 3, buffer );
+   if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", MOISTURE_TOPIC );
+   dtostrf( ( minMoisture ), 1, 3, buffer );
+   if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
 
-	lastPublishTime = millis();
+   lastPublishTime = millis();
 } // End of publishTelemetry() function.
 
 
@@ -261,80 +261,80 @@ void publishTelemetry()
  */
 void runPump()
 {
-	unsigned long currentTime = millis();
+   unsigned long currentTime = millis();
 
-	// If the soil is dry and the pump is not running.
-	if( !pumpRunning && ( soilMoisture < minMoisture ) )
-	{
-		// If enough time has passed since the pump was shut off (so to give time for water to flow to the sensor).
-		if( currentTime - pumpStopTime > pumpMinOffDelay )
-		{
-			Serial.printf( "Moisture level %.2f is below threshold %.2f\n", soilMoisture, minMoisture );
-			Serial.println( "Starting the pump." );
-			// Note the start time.
-			pumpStartTime = currentTime;
-			// Turn the relay (pump) on.  This relay board switches on when the pin is pulled to ground.
-			digitalWrite( RELAY_GPIO, PUMP_ON );
-			// Flag that the pump is now running.
-			pumpRunning = true;
-		}
-	}
+   // If the soil is dry and the pump is not running.
+   if( !pumpRunning && ( soilMoisture < minMoisture ) )
+   {
+      // If enough time has passed since the pump was shut off (so to give time for water to flow to the sensor).
+      if( currentTime - pumpStopTime > pumpMinOffDelay )
+      {
+         Serial.printf( "Moisture level %.2f is below threshold %.2f\n", soilMoisture, minMoisture );
+         Serial.println( "Starting the pump." );
+         // Note the start time.
+         pumpStartTime = currentTime;
+         // Turn the relay (pump) on.  This relay board switches on when the pin is pulled to ground.
+         digitalWrite( RELAY_GPIO, PUMP_ON );
+         // Flag that the pump is now running.
+         pumpRunning = true;
+      }
+   }
 
-	// If the pump is currently running.
-	if( pumpRunning )
-	{
-		// If enough time has passed since the pump was started.
-		if( currentTime - pumpStartTime > pumpRunTime )
-		{
-			Serial.println( "Stopping the pump." );
-			// Note the start time.
-			pumpStopTime = currentTime;
-			// Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
-			digitalWrite( RELAY_GPIO, PUMP_OFF );
-			// Flag that the pump has stopped.
-			pumpRunning = false;
-		}
-	}
+   // If the pump is currently running.
+   if( pumpRunning )
+   {
+      // If enough time has passed since the pump was started.
+      if( currentTime - pumpStartTime > pumpRunTime )
+      {
+         Serial.println( "Stopping the pump." );
+         // Note the start time.
+         pumpStopTime = currentTime;
+         // Turn the relay (pump) off.  This relay board switches off when the pin is pulled high.
+         digitalWrite( RELAY_GPIO, PUMP_OFF );
+         // Flag that the pump has stopped.
+         pumpRunning = false;
+      }
+   }
 } // End of runPump() function.
 
 
 void loop()
 {
-	// Reconnect to Wi-Fi and the MQTT broker as needed.
-	if( !mqttClient.connected() )
-		mqttMultiConnect( 2 );
-	// The loop() function facilitates the receiving of messages and maintains the connection to the broker.
-	mqttClient.loop();
+   // Reconnect to Wi-Fi and the MQTT broker as needed.
+   if( !mqttClient.connected() )
+      mqttMultiConnect( 2 );
+   // The loop() function facilitates the receiving of messages and maintains the connection to the broker.
+   mqttClient.loop();
 
-	ArduinoOTA.handle();
+   ArduinoOTA.handle();
 
-	// Check if the pump should be run.
-	runPump();
+   // Check if the pump should be run.
+   runPump();
 
-	unsigned long time = millis();
-	// Poll the first time.  Avoid subtraction overflow.  Poll every interval.
-	if( lastPollTime == 0 || ( ( time > sensorPollInterval ) && ( time - sensorPollInterval ) > lastPollTime ) )
-	{
-		readTelemetry();
-		printTelemetry();
-		lastPollTime = millis();
-	}
+   unsigned long time = millis();
+   // Poll the first time.  Avoid subtraction overflow.  Poll every interval.
+   if( lastPollTime == 0 || ( ( time > sensorPollInterval ) && ( time - sensorPollInterval ) > lastPollTime ) )
+   {
+      readTelemetry();
+      printTelemetry();
+      lastPollTime = millis();
+   }
 
-	time = millis();
-	// if( lastPublishTime == 0 || ( ( time > publishInterval ) && ( time - publishInterval ) > lastPublishTime ) )
-	if( ( time > publishInterval ) && ( time - publishInterval ) > lastPublishTime )
-	{
-		publishCount++;
-		// These next 3 lines act as a "heartbeat", to give local users a visual indication that the system is working.
-		digitalWrite( MCU_LED, LED_OFF ); // Turn the LED off, to alert the user that a publish is about to take place.
-		delay( 1000 );							 // Wait for one second.
-		digitalWrite( MCU_LED, LED_ON );	 // Turn the LED on.
+   time = millis();
+   // if( lastPublishTime == 0 || ( ( time > publishInterval ) && ( time - publishInterval ) > lastPublishTime ) )
+   if( ( time > publishInterval ) && ( time - publishInterval ) > lastPublishTime )
+   {
+      publishCount++;
+      // These next 3 lines act as a "heartbeat", to give local users a visual indication that the system is working.
+      digitalWrite( MCU_LED, LED_OFF ); // Turn the LED off, to alert the user that a publish is about to take place.
+      delay( 1000 );							 // Wait for one second.
+      digitalWrite( MCU_LED, LED_ON );	 // Turn the LED on.
 
-		publishTelemetry();
+      publishTelemetry();
 
-		Serial.printf( "publishCount: %lu\n", publishCount );
+      Serial.printf( "publishCount: %lu\n", publishCount );
 
-		lastPublishTime = millis();
-		Serial.printf( "Next MQTT publish in %lu seconds.\n\n", publishInterval / 1000 );
-	}
+      lastPublishTime = millis();
+      Serial.printf( "Next MQTT publish in %lu seconds.\n\n", publishInterval / 1000 );
+   }
 } // End of loop() function.
