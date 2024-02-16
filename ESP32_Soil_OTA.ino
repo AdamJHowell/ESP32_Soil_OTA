@@ -18,8 +18,8 @@
  * If the moisture level is still low after pumpRunTime milliseconds, it will trigger again during the next loop() after pumpMinOffDelay milliseconds has passed.
  *
  * Publish:
- * 	every time the pump runs: soilMoisture and tempC
- * 	every publishInterval: all stats (soilMoisture, tempC, publishCount, etc.)
+ *    every time the pump runs: soilMoisture and tempC
+ *    every publishInterval: all stats (soilMoisture, tempC, publishCount, etc.)
  */
 
 
@@ -175,7 +175,7 @@ void printTelemetry()
    {
       Serial.printf( "  IP address: %s\n", ipAddress );
       Serial.printf( "  RSSI: %ld\n", rssi );
-      Serial.print( "~~IP address: " );
+      Serial.print( "  WiFi.localIP(): " );
       Serial.println( WiFi.localIP() );
    }
    Serial.printf( "  wifiConnectCount: %u\n", wifiConnectCount );
@@ -249,15 +249,15 @@ void publishTelemetry()
 /**
  * @brief runPump() will turn the pump on and off as needed.
  *
- * The pump will turn on when:
- * 	The pump is not currently running.
- * 	The moisture level is low.
- * 	It has been off for at least pumpMinOffDelay milliseconds.
+ * The pump will turn on when all are met:
+ *    The pump is not currently running.
+ *    The moisture level is low.
+ *    It has been off for at least pumpMinOffDelay milliseconds.
  *
- * The pump will turn off when:
- * 	The pump is currently running.
- * 	The pump has been running for at least pumpRunTime milliseconds.
- * 	Note that it does not check the moisture level.  This is deliberate.
+ * The pump will turn off when all are met:
+ *    The pump is currently running.
+ *    The pump has been running for at least pumpRunTime milliseconds.
+ *    Note that it does not check the moisture level.  This is deliberate.
  */
 void runPump()
 {
