@@ -19,7 +19,7 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
 {
    Serial.printf( "\nMessage arrived on Topic: '%s'\n", topic );
 
-   StaticJsonDocument<JSON_DOC_SIZE> callbackJsonDoc;
+   JsonDocument callbackJsonDoc;
    deserializeJson( callbackJsonDoc, payload, length );
 
    // The command can be: publishTelemetry, publishStatus, pumpOn, pumpOff, or changeTelemetryInterval.
