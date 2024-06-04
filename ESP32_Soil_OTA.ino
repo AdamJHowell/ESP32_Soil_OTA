@@ -7,7 +7,7 @@
  *    <location>/<device>/<device reading>
  *    <location>/<device>/<sensor type>/<sensor reading>
  *
- * @copyright   Copyright © 2023 Adam Howell
+ * @copyright   Copyright © 2024 Adam Howell
  * @license     The MIT License (MIT)
  *
  * Pseudocode:
@@ -269,7 +269,7 @@ void runPump()
       // If enough time has passed since the pump was shut off (so to give time for water to flow to the sensor).
       if( currentTime - pumpStopTime > pumpMinOffDelay )
       {
-         Serial.printf( "Moisture level %.2f is below threshold %.2f\n", soilMoisture, minMoisture );
+         Serial.printf( "Moisture level %d is below threshold %d\n", soilMoisture, minMoisture );
          Serial.println( "Starting the pump." );
          // Note the start time.
          pumpStartTime = currentTime;
