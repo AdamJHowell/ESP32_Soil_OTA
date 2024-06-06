@@ -4,8 +4,10 @@ project( ESP32_Soil_OTA )
 set( CMAKE_CXX_STANDARD 14 )
 
 include_directories( .
-		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.14/libraries/ESPmDNS/src/"
-		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.14/libraries/WiFi/src"
+		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.16/libraries/ESPmDNS/src/"
+		"C:/Users/Adam/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.16/libraries/Wire/src"
+		"C:/Users/Adam/Documents/Arduino/libraries/ArduinoJson"
+		"C:/Users/Adam/Documents/Arduino/libraries/Adafruit_seesaw_Library"
 )
 
 add_executable( ESP32_Soil_OTA

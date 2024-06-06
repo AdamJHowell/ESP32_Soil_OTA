@@ -28,7 +28,7 @@ void onReceiveCallback( char *topic, byte *payload, unsigned int length )
    {
       Serial.println( "Reading and publishing sensor values." );
       // Poll the sensor.
-      readTelemetry();
+      pollTelemetry();
       // Publish the sensor readings.
       publishTelemetry();
       Serial.println( "Readings have been published." );

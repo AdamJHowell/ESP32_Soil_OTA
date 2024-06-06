@@ -27,56 +27,105 @@
 
 
 /**
- * @brief readTelemetry() will:
+ * @brief cToF() will convert Celsius to Fahrenheit.
+ */
+float cToF( float value )
+{
+   return value * 1.8 + 32;
+} // End of the cToF() function.
+
+
+/**
+ * @brief findMaximum() will return the largest value in the passed array.
+ */
+float findMaximum( float valueArray[], unsigned int size )
+{
+   float maxValue = valueArray[0];
+   for( int i = 1; i < size; ++i )
+   {
+      if( valueArray[i] > maxValue )
+         maxValue = valueArray[i];
+   }
+   return maxValue;
+} // End of the findMaximum() function.
+
+
+/**
+ * @brief findMinimum() will return the smallest value in the passed array.
+ */
+float findMinimum( float valueArray[], unsigned int size )
+{
+   float minValue = valueArray[0];
+   for( int i = 1; i < size; ++i )
+   {
+      if( valueArray[i] < minValue )
+         minValue = valueArray[i];
+   }
+   return minValue;
+} // End of the findMinimum() function.
+
+
+/**
+ * @brief averageArray() will return the average of values in the passed array.
+ */
+float averageArray( float valueArray[] )
+{
+   const unsigned int arraySize = 3;
+   float tempValue = 0;
+   for( int i = 0; i < arraySize; ++i )
+   {
+      tempValue += valueArray[i];
+   }
+   return tempValue / arraySize;
+} // End of the averageArray() function.
+
+
+/**
+ * @brief addValue() will add the passed value to the 0th element of the passed array, after moving the existing array values to higher indexes.
+ * If value is less than minValue, or greater than maxValue, it will be discarded and nothing will be added to valueArray.
+ */
+void addValue( float valueArray[], unsigned int size, float value, float minValue, float maxValue )
+{
+   // Prevent sensor anomalies from getting into the array.
+   if( value < minValue || value > maxValue )
+   {
+      Serial.printf( "\n\nValue %f is not between %f and %f!\n\n", value, minValue, maxValue );
+      invalidValueCount++;
+      return;
+   }
+
+   // Detect outliers.
+   float minArrayValue = findMinimum( valueArray, size );
+   float maxArrayValue = findMaximum( valueArray, size );
+   if( value < ( minArrayValue / 2 ) )
+   {
+      Serial.printf( "\n\nValue %f is less than half the smallest existing value of %f!\n\n", value, minArrayValue );
+      invalidValueCount++;
+      return;
+   }
+   if( value > ( maxArrayValue * 2 ) )
+   {
+      Serial.printf( "\n\nValue %f is more than double the largest existing value of %f!\n\n", value, maxArrayValue );
+      invalidValueCount++;
+      return;
+   }
+
+   valueArray[2] = valueArray[1];
+   valueArray[1] = valueArray[0];
+   valueArray[0] = value;
+} // End of the addValue() function.
+
+
+/**
+ * @brief pollTelemetry() will:
  * 1. read from all available sensors
  * 2. store legitimate values in global variables
- * 3. set a flag if any value is invalid
  */
-void readTelemetry()
+void pollTelemetry()
 {
    rssi = WiFi.RSSI();
-
-   float temporarySoilTempC = soilSensor.getTemp();
-   unsigned int temporarySoilMoisture = soilSensor.touchRead( 0 );
-
-   // Define the valid temperature range (in Celsius) for this sensor.
-   if( temporarySoilTempC > -20 && temporarySoilTempC < 100 )
-   {
-      tempC = temporarySoilTempC;
-      tempF = ( tempC * 1.8 ) + 32;
-      invalidTemp = 0;
-   }
-   else
-   {
-      invalidTemp++;
-      Serial.printf( "\n\n~~~  Invalid temperature reading of %.2f  ~~~\n", temporarySoilTempC );
-      Serial.printf( "~~~  Acceptable range is %.2f to %.2f  ~~~\n\n", -20.0, 100.0 );
-   }
-
-   // Define the valid moisture range for this sensor.
-   if( temporarySoilMoisture > 200 && temporarySoilMoisture < 2000 )
-   {
-      soilMoisture = temporarySoilMoisture;
-      invalidMoisture = 0;
-   }
-   else
-   {
-      invalidMoisture++;
-      Serial.printf( "\n\n~~~  Invalid moisture reading of %u  ~~~\n", temporarySoilMoisture );
-      Serial.printf( "~~~  Acceptable range is %u to %u  ~~~\n\n", 200, 2000 );
-   }
-
-   // If either invalid count is too high, reset the device.
-   if( invalidTemp > 10 || invalidMoisture > 10 )
-   {
-      Serial.println( "\n\n\n\n" );
-      Serial.printf( "%u consecutive bad temperature readings!\n", invalidTemp );
-      Serial.printf( "%u consecutive bad humidity readings!\n", invalidMoisture );
-      mqttClient.publish( MQTT_STATS_TOPIC, "Resetting the device due to invalid sensor readings!", false );
-      delay( 15000 );
-      Serial.println( "Resetting the device!\n\n\n" );
-      ESP.restart();
-   }
+   addValue( tempCArray, 3, soilSensor.getTemp(), -30, 80 );
+   addValue( moistureArray, 3, soilSensor.touchRead( 0 ), -30, 80 );
 } // End of readTelemetry() function.
 
 
@@ -85,10 +134,10 @@ void readTelemetry()
  */
 void setup()
 {
-   delay( 1000 );							// A pause to give me time to open the serial monitor.
-   pinMode( MCU_LED, OUTPUT );		// Initialize the GPIO which controls the LED as an output.
+   delay( 1000 );                   // A pause to give me time to open the serial monitor.
+   pinMode( MCU_LED, OUTPUT );      // Initialize the GPIO which controls the LED as an output.
    digitalWrite( MCU_LED, LED_ON ); // Turn the LED on.
-   Wire.begin();							// Initialize I2C communication.
+   Wire.begin();                    // Initialize I2C communication.
 
    Serial.begin( 115200 );
    if( !Serial )
@@ -98,7 +147,7 @@ void setup()
    Serial.println( "The setup() function is beginning." );
    Serial.println( __FILE__ );
 
-   pinMode( RELAY_GPIO, OUTPUT );			 // Set the replay (pump) GPIO as an output.
+   pinMode( RELAY_GPIO, OUTPUT );        // Set the replay (pump) GPIO as an output.
    digitalWrite( RELAY_GPIO, PUMP_OFF ); // Turn the relay (pump) off.
 
    // Set the ipAddress char array to a default value.
@@ -111,6 +160,7 @@ void setup()
    {
       Serial.print( "Seesaw started! version: " );
       Serial.println( soilSensor.getVersion(), HEX );
+      sensorInitialized = true;
    }
 
    // Set the MAC address variable to its value.
@@ -195,12 +245,10 @@ void printTelemetry()
    Serial.println();
 
    Serial.println( "Environmental stats:" );
-   Serial.printf( "  Temperature: %.2f C\n", tempC );
-   Serial.printf( "  Temperature: %.2f F\n", tempF );
-   Serial.printf( "  Moisture: %u\n", soilMoisture );
+   Serial.printf( "  Temperature: %.2f C\n", averageArray( tempCArray ) );
+   Serial.printf( "  Temperature: %.2f F\n", cToF( averageArray( tempCArray ) ) );
+   Serial.printf( "  Moisture: %u\n", averageArray( moistureArray ) );
    Serial.printf( "  Moisture threshold: %u\n", minMoisture );
-   Serial.printf( "  Invalid moisture readings: %u\n", invalidMoisture );
-   Serial.printf( "  Invalid temperature readings: %u\n", invalidTemp );
    Serial.println();
 
    printUptime();
@@ -278,7 +326,7 @@ void runPump()
          // Flag that the pump is now running.
          pumpRunning = true;
       }
-    }
+   }
 
    // If the pump is currently running.
    if( pumpRunning )
@@ -315,8 +363,13 @@ void loop()
    // Poll the first time.  Avoid subtraction overflow.  Poll every interval.
    if( lastPollTime == 0 || ( ( time > sensorPollInterval ) && ( time - sensorPollInterval ) > lastPollTime ) )
    {
-      readTelemetry();
-      printTelemetry();
+      if( !sensorInitialized )
+         Serial.printf( "\n\nSensor is not initialized!\n\n" );
+      else
+      {
+         pollTelemetry();
+         printTelemetry();
+      }
       lastPollTime = millis();
    }
 
@@ -327,8 +380,8 @@ void loop()
       publishCount++;
       // These next 3 lines act as a "heartbeat", to give local users a visual indication that the system is working.
       digitalWrite( MCU_LED, LED_OFF ); // Turn the LED off, to alert the user that a publish is about to take place.
-      delay( 1000 );							 // Wait for one second.
-      digitalWrite( MCU_LED, LED_ON );	 // Turn the LED on.
+      delay( 1000 );                    // Wait for one second.
+      digitalWrite( MCU_LED, LED_ON );  // Turn the LED on.
 
       publishTelemetry();
 
@@ -336,5 +389,16 @@ void loop()
 
       lastPublishTime = millis();
       Serial.printf( "Next MQTT publish in %lu seconds.\n\n", publishInterval / 1000 );
+   }
+
+   // Reset the device if the number of invalid sensor readings is too high.
+   if( invalidValueCount > 10 )
+   {
+      Serial.println( "\n\n\n" );
+      Serial.println( "Too many invalid sensor readings have occurred!" );
+      Serial.println( "The device will reset in 5 seconds!" );
+      delay( 5 * MILLIS_IN_SEC );
+      Serial.println( "\n\n\n" );
+      ESP.restart();
    }
 } // End of loop() function.

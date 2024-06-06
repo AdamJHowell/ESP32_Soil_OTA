@@ -25,7 +25,6 @@
 //const int mqttPort = 1883;
 const char *HOSTNAME = "ESP32_Soil_OTA";                                           // The network hostname to set.
 const char *NOTES = "HiLetgo ESP32 with Adafruit I2C soil sensor";                 // Notes about this program.
-//const char *COMMAND_TOPIC = "backYard/plantWatering/command";                      // The topic used to subscribe to update commands.  Commands: publishTelemetry, changeTelemetryInterval, publishStatus.
 const char *SKETCH_TOPIC = "backYard/plantWatering/sketch";                        // The topic used to publish the sketch name.
 const char *MAC_TOPIC = "backYard/plantWatering/mac";                              // The topic used to publish the MAC address.
 const char *IP_TOPIC = "backYard/plantWatering/ip";                                // The topic used to publish the IP address.
@@ -36,7 +35,6 @@ const char *TEMP_C_TOPIC = "backYard/plantWatering/soil/tempC";                 
 const char *TEMP_F_TOPIC = "backYard/plantWatering/soil/tempF";                    // The topic used to publish the soil temperature in Fahrenheit.
 const char *MOISTURE_TOPIC = "backYard/plantWatering/soil/moisture";               // The topic used to publish the soil moisture.
 const char *MOISTURE_THRESHOLD_TOPIC = "backYard/plantWatering/moistureThreshold"; // The topic used to publish the soil moisture.
-const char *MQTT_STATS_TOPIC = "backYard/stats";                                   // The topic this device will publish to upon connection to the broker.
 const unsigned int MCU_LED = 2;                                                    // Use this LED for notifications.
 const unsigned int SCL_GPIO = 22;                                                  // The GPIO to use for SCL.
 const unsigned int SDA_GPIO = 21;                                                  // The GPIO to use for SDA.
@@ -49,11 +47,9 @@ unsigned int wifiConnectionTimeout = 10000;                                     
 unsigned int mqttReconnectInterval = 3000;                                         // When mqttMultiConnect is set to try multiple times, this is how long to delay between each attempt.
 unsigned int mqttConnectCount = 0;                                                 // A counter for how many times the mqttConnect() function has been called.
 unsigned int mqttReconnectCooldown = 20000;                                        // Set the minimum time between calls to mqttMultiConnect() to 20 seconds.
-unsigned int soilMoisture = 707;                                                   // The soil moisture level (capacitance).
 unsigned int minMoisture = 700;                                                    // The moisture level which triggers the pump.
-unsigned int invalidTemp = 0;                                                      // Holds the current number of consecutive invalid temperature readings.
-unsigned int invalidMoisture = 0;                                                  // Holds the current number of consecutive invalid humidity readings.
 unsigned int callbackCount = 0;                                                    // A count for how many times a callback was received.
+unsigned int invalidValueCount = 0;                                                // A count of how many sensor readings were out of bounds.
 unsigned long lastWifiConnectTime = 0;                                             // The last time a Wi-Fi connection was attempted.
 unsigned long publishCount = 0;                                                    // A count of how many publishes have taken place.
 unsigned long publishInterval = 20000;                                             // The delay in milliseconds between MQTT publishes.  This prevents "flooding" the broker.
@@ -71,12 +67,15 @@ unsigned long pumpStopTime = 0;                                                 
 char ipAddress[16];                                                                // The IP address.
 char macAddress[18];                                                               // The MAC address to use as part of the MQTT client ID.
 bool pumpRunning = false;                                                          // Flag to indicate when the pump is running or not.
+bool sensorInitialized = false;                                                    // Flag to indicate that the sensor has been initialized.
 float tempC = 21.12;                                                               // A global to hold the temperature in Celsius.
 float tempF = 21.12;                                                               // A global to hold the temperature in Fahrenheit.
 long rssi = -42;                                                                   // A global to hold the Received Signal Strength Indicator.
+float tempCArray[] = { -21.12, 21.12, 42.42 };                          // An array to hold the 3 most recent Celsius values, initialized to reasonable levels.
+float moistureArray[] = { 0.0, 300, 1000 };                       // An array to hold the 3 most recent moisture values, initialized to reasonable levels.
 
 
-void readTelemetry();
+void pollTelemetry();
 void printUptime();
 void printTelemetry();
 void publishTelemetry();
