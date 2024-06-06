@@ -286,14 +286,18 @@ void publishTelemetry()
    dtostrf( ( tempF ), 1, 3, buffer );
    if( mqttClient.publish( TEMP_F_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", TEMP_F_TOPIC );
-   dtostrf( ( soilMoisture ), 1, 3, buffer );
+   dtostrf( ( averageArray( moistureArray ) ), 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_TOPIC );
    dtostrf( ( minMoisture ), 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
-   if( mqttClient.publish( PUMP_RUNNING_TOPIC, pumpRunning, false ) )
-      Serial.printf( "  %s\n", PUMP_RUNNING_TOPIC );
+  if( pumpRunning )
+    snprintf( buffer, 6, "true" );
+  else
+    snprintf( buffer, 6, "false" );
+  if( mqttClient.publish( PUMP_RUNNING_TOPIC, buffer, false ) )
+    Serial.printf( "  %s\n", PUMP_RUNNING_TOPIC );
 
    lastPublishTime = millis();
 } // End of publishTelemetry() function.
@@ -317,12 +321,12 @@ void runPump()
    unsigned long currentTime = millis();
 
    // If the soil is dry and the pump is not running.
-   if( !pumpRunning && ( soilMoisture < minMoisture ) )
+   if( !pumpRunning && ( averageArray( moistureArray ) < minMoisture ) )
    {
       // If enough time has passed since the pump was shut off (so to give time for water to flow to the sensor).
       if( currentTime - pumpStopTime > pumpMinOffDelay )
       {
-         Serial.printf( "Moisture level %d is below threshold %d\n", soilMoisture, minMoisture );
+         Serial.printf( "Moisture level %d is below threshold %d\n", averageArray( moistureArray ), minMoisture );
          Serial.println( "Starting the pump." );
          // Note the start time.
          pumpStartTime = currentTime;

@@ -43,6 +43,7 @@ const unsigned int RELAY_GPIO = 4;                                              
 const unsigned int PUMP_ON = 0;                                                    // Change this to work with low-trigger relays.
 const unsigned int PUMP_OFF = 1;                                                   // Change this to work with low-trigger relays.
 const unsigned int JSON_DOC_SIZE = 512;                                            // The ArduinoJson document size.
+const unsigned int MILLIS_IN_SEC = 1000;                                           // The number of milliseconds in a second.
 unsigned int wifiConnectCount = 0;                                                 // A counter for how many times the wifiConnect() function has been called.
 unsigned int wifiConnectionTimeout = 10000;                                        // Set the Wi-Fi connection timeout to 10 seconds.
 unsigned int mqttReconnectInterval = 3000;                                         // When mqttMultiConnect is set to try multiple times, this is how long to delay between each attempt.
