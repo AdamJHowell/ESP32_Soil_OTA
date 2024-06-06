@@ -251,6 +251,9 @@ void printTelemetry()
    Serial.printf( "  Moisture threshold: %u\n", minMoisture );
    Serial.println();
 
+   Serial.printf("Pump running?: %s\n", pumpRunning ? "true" : "false");
+   Serial.println();
+
    printUptime();
 } // End of printTelemetry() function.
 
@@ -289,6 +292,8 @@ void publishTelemetry()
    dtostrf( ( minMoisture ), 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
+   if( mqttClient.publish( PUMP_RUNNING_TOPIC, pumpRunning, false ) )
+      Serial.printf( "  %s\n", PUMP_RUNNING_TOPIC );
 
    lastPublishTime = millis();
 } // End of publishTelemetry() function.
@@ -364,7 +369,10 @@ void loop()
    if( lastPollTime == 0 || ( ( time > sensorPollInterval ) && ( time - sensorPollInterval ) > lastPollTime ) )
    {
       if( !sensorInitialized )
+      {
          Serial.printf( "\n\nSensor is not initialized!\n\n" );
+         invalidValueCount++;
+      }
       else
       {
          pollTelemetry();

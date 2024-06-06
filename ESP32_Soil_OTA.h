@@ -35,6 +35,7 @@ const char *TEMP_C_TOPIC = "backYard/plantWatering/soil/tempC";                 
 const char *TEMP_F_TOPIC = "backYard/plantWatering/soil/tempF";                    // The topic used to publish the soil temperature in Fahrenheit.
 const char *MOISTURE_TOPIC = "backYard/plantWatering/soil/moisture";               // The topic used to publish the soil moisture.
 const char *MOISTURE_THRESHOLD_TOPIC = "backYard/plantWatering/moistureThreshold"; // The topic used to publish the soil moisture.
+const char *PUMP_RUNNING_TOPIC = "backYard/plantWatering/pumpRunning";             // The topic used to publish the pump status.
 const unsigned int MCU_LED = 2;                                                    // Use this LED for notifications.
 const unsigned int SCL_GPIO = 22;                                                  // The GPIO to use for SCL.
 const unsigned int SDA_GPIO = 21;                                                  // The GPIO to use for SDA.
