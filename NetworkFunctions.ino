@@ -118,7 +118,7 @@ void configureOTA()
    // The ESP32 port defaults to 3232
    // ArduinoOTA.setPort( 3232 );
    // The ESP32 hostname defaults to esp32-[MAC]
-   //	ArduinoOTA.setHostname( HOSTNAME );  // I'm deliberately using the default.
+   ArduinoOTA.setHostname( HOSTNAME ); // I'm deliberately using the default.
    // Authentication is disabled by default.
    ArduinoOTA.setPassword( otaPass );
    // Password can be set with it's md5 value as well
@@ -175,7 +175,7 @@ int checkForSSID( const char *ssidName )
       Serial.println( "No WiFi SSIDs are in range!" );
    else
    {
-      //      Serial.printf( "WiFi SSIDs in range: %d\n", networkCount );
+      //      Serial.printf( "Wi-Fi SSIDs in range: %d\n", networkCount );
       for( int i = 0; i < networkCount; ++i )
       {
          // Check to see if this SSID matches the parameter.

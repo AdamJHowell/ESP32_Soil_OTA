@@ -70,13 +70,12 @@ float findMinimum( float valueArray[], unsigned int size )
  */
 float averageArray( float valueArray[] )
 {
-   const unsigned int arraySize = 3;
    float tempValue = 0;
-   for( int i = 0; i < arraySize; ++i )
+   for( int i = 0; i < ARRAY_SIZE; ++i )
    {
       tempValue += valueArray[i];
    }
-   return tempValue / arraySize;
+   return tempValue / ARRAY_SIZE;
 } // End of the averageArray() function.
 
 
@@ -110,8 +109,10 @@ void addValue( float valueArray[], unsigned int size, float value, float minValu
       return;
    }
 
-   valueArray[2] = valueArray[1];
-   valueArray[1] = valueArray[0];
+   for( int i = size; i > 1; i-- )
+   {
+      valueArray[i - 1] = valueArray[i - 2];
+   }
    valueArray[0] = value;
 } // End of the addValue() function.
 
@@ -124,8 +125,8 @@ void addValue( float valueArray[], unsigned int size, float value, float minValu
 void pollTelemetry()
 {
    rssi = WiFi.RSSI();
-   addValue( tempCArray, 3, soilSensor.getTemp(), -30, 80 );
-   addValue( moistureArray, 3, soilSensor.touchRead( 0 ), -30, 80 );
+   addValue( tempCArray, ARRAY_SIZE, soilSensor.getTemp(), -30, 80 );
+   addValue( moistureArray, ARRAY_SIZE, soilSensor.touchRead( 0 ), 300, 2000 );
 } // End of readTelemetry() function.
 
 
@@ -251,7 +252,7 @@ void printTelemetry()
    Serial.printf( "  Moisture threshold: %u\n", minMoisture );
    Serial.println();
 
-   Serial.printf("Pump running?: %s\n", pumpRunning ? "true" : "false");
+   Serial.printf( "Pump running?: %s\n", pumpRunning ? "true" : "false" );
    Serial.println();
 
    printUptime();
@@ -292,12 +293,12 @@ void publishTelemetry()
    dtostrf( ( minMoisture ), 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
-  if( pumpRunning )
-    snprintf( buffer, 6, "true" );
-  else
-    snprintf( buffer, 6, "false" );
-  if( mqttClient.publish( PUMP_RUNNING_TOPIC, buffer, false ) )
-    Serial.printf( "  %s\n", PUMP_RUNNING_TOPIC );
+   if( pumpRunning )
+      snprintf( buffer, 6, "true" );
+   else
+      snprintf( buffer, 6, "false" );
+   if( mqttClient.publish( PUMP_RUNNING_TOPIC, buffer, false ) )
+      Serial.printf( "  %s\n", PUMP_RUNNING_TOPIC );
 
    lastPublishTime = millis();
 } // End of publishTelemetry() function.
