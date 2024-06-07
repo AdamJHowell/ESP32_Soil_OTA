@@ -381,8 +381,8 @@ void loop()
       else
       {
          pollTelemetry();
-         printTelemetry();
       }
+      printTelemetry();
       lastPollTime = millis();
    }
 
