@@ -71,11 +71,9 @@ char ipAddress[16];                                                             
 char macAddress[18];                                                               // The MAC address to use as part of the MQTT client ID.
 bool pumpRunning = false;                                                          // Flag to indicate when the pump is running or not.
 bool sensorInitialized = false;                                                    // Flag to indicate that the sensor has been initialized.
-float tempC = 21.12;                                                               // A global to hold the temperature in Celsius.
-float tempF = 21.12;                                                               // A global to hold the temperature in Fahrenheit.
 long rssi = -42;                                                                   // A global to hold the Received Signal Strength Indicator.
-float tempCArray[] = { -21.12, 21.12, 42.42 };                          // An array to hold the 3 most recent Celsius values, initialized to reasonable levels.
-float moistureArray[] = { 0.0, 300, 1000 };                       // An array to hold the 3 most recent moisture values, initialized to reasonable levels.
+float tempCArray[] = { -21.12, 21.12, 42.42 };                         // An array to hold the 3 most recent Celsius values, initialized to reasonable levels.
+float moistureArray[] = { 0.0, 300, 1000 };                            // An array to hold the 3 most recent moisture values, initialized to reasonable levels.
 
 
 void pollTelemetry();

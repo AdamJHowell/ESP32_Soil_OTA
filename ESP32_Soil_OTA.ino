@@ -281,16 +281,16 @@ void publishTelemetry()
       Serial.printf( "  %s\n", PUBLISH_COUNT_TOPIC );
    if( mqttClient.publish( NOTES_TOPIC, NOTES, false ) )
       Serial.printf( "  %s\n", NOTES_TOPIC );
-   dtostrf( tempC, 1, 3, buffer );
+   dtostrf( averageArray( tempCArray ), 1, 3, buffer );
    if( mqttClient.publish( TEMP_C_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", TEMP_C_TOPIC );
-   dtostrf( ( tempF ), 1, 3, buffer );
+   dtostrf( cToF( averageArray( tempCArray ) ), 1, 3, buffer );
    if( mqttClient.publish( TEMP_F_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", TEMP_F_TOPIC );
    dtostrf( ( averageArray( moistureArray ) ), 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_TOPIC );
-   dtostrf( ( minMoisture ), 1, 3, buffer );
+   dtostrf( minMoisture, 1, 3, buffer );
    if( mqttClient.publish( MOISTURE_THRESHOLD_TOPIC, buffer, false ) )
       Serial.printf( "  %s\n", MOISTURE_THRESHOLD_TOPIC );
    if( pumpRunning )
