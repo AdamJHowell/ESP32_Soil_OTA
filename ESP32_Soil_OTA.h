@@ -39,7 +39,10 @@ const char *PUMP_RUNNING_TOPIC = "backYard/plantWatering/pumpRunning";          
 const unsigned int MCU_LED = 2;                                                    // Use this LED for notifications.
 //const unsigned int SCL_GPIO = 22;                                                  // The GPIO to use for SCL.
 //const unsigned int SDA_GPIO = 21;                                                  // The GPIO to use for SDA.
-const unsigned int RELAY_GPIO = 4;                                                 // The GPIO which controls the relay.
+const unsigned int RELAY_GPIO = 4;                                                 // The GPIO which controls relay 1.
+const unsigned int RELAY_GPIO_2 = 17;                                              // The GPIO which controls relay 2.
+const unsigned int RELAY_GPIO_3 = 18;                                              // The GPIO which controls relay 3.
+const unsigned int RELAY_GPIO_4 = 19;                                              // The GPIO which controls relay 4.
 const unsigned int PUMP_ON = 0;                                                    // Change this to work with low-trigger relays.
 const unsigned int PUMP_OFF = 1;                                                   // Change this to work with low-trigger relays.
 const unsigned int JSON_DOC_SIZE = 512;                                            // The ArduinoJson document size.
@@ -72,8 +75,8 @@ char macAddress[18];                                                            
 bool pumpRunning = false;                                                          // Flag to indicate when the pump is running or not.
 bool sensorInitialized = false;                                                    // Flag to indicate that the sensor has been initialized.
 long rssi = -42;                                                                   // A global to hold the Received Signal Strength Indicator.
-float tempCArray[] = { -21.12, 21.12, 42.42 };                         // An array to hold the 3 most recent Celsius values, initialized to reasonable levels.
-float moistureArray[] = { 0.0, 300, 1000 };                            // An array to hold the 3 most recent moisture values, initialized to reasonable levels.
+float tempCArray[] = { -21.12, 21.12, 42.42 };                                     // An array to hold the 3 most recent Celsius values, initialized to reasonable levels.
+float moistureArray[] = { 0.0, 300, 1000 };                                        // An array to hold the 3 most recent moisture values, initialized to reasonable levels.
 
 
 void pollTelemetry();
